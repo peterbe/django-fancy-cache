@@ -1,3 +1,4 @@
 *.pyc
 build/
 fancy_cache.egg-info/
+dist/
