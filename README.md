@@ -6,7 +6,7 @@ django-fancy-cache
 About django-fancy-cache
 ------------------------
 
-A `cache_page` decorator on steroids.
+A Django `cache_page` decorator on steroids.
 
 Unlike the stock `django.views.decorators.cache.change_page` this
 decorator makes it possible to set a `key_prefixer` that is a
