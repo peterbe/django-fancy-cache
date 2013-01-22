@@ -1,6 +1,11 @@
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.cache import get_cache_key, learn_cache_key, patch_response_headers, get_max_age
+from django.utils.cache import (
+    get_cache_key,
+    learn_cache_key,
+    patch_response_headers,
+    get_max_age
+)
 
 
 class UpdateCacheMiddleware(object):
@@ -15,7 +20,10 @@ class UpdateCacheMiddleware(object):
 
     def process_response(self, request, response):
         """Sets the cache, if needed."""
-        if not hasattr(request, '_cache_update_cache') or not request._cache_update_cache:
+        if (
+            not hasattr(request, '_cache_update_cache') or
+            not request._cache_update_cache
+        ):
             # We don't need to update the cache, just return.
             return response
         if request.method != 'GET':
@@ -30,7 +38,7 @@ class UpdateCacheMiddleware(object):
         # Control" header before reverting to using the default cache_timeout
         # length.
         timeout = get_max_age(response)
-        if timeout == None:
+        if timeout is None:
             timeout = self.cache_timeout
         elif timeout == 0:
             # max-age was set to 0, don't bother caching.
@@ -45,7 +53,10 @@ class UpdateCacheMiddleware(object):
             else:
                 key_prefix = self.key_prefix
             if self.post_process_response:
-                response = self.post_process_response(response, request=request)
+                response = self.post_process_response(
+                    response,
+                    request
+                )
             cache_key = learn_cache_key(request, response, timeout, key_prefix)
             cache.set(cache_key, response, timeout)
         return response
@@ -69,21 +80,27 @@ class FetchFromCacheMiddleware(object):
 
         if not request.method in ('GET', 'HEAD'):
             request._cache_update_cache = False
-            return None # Don't bother checking the cache.
+            # Don't bother checking the cache.
+            return None
 
         if request.GET and not callable(self.key_prefix):
             request._cache_update_cache = False
-            return None # Default behaviour for requests with GET parameters: don't bother checking the cache.
+            # Default behaviour for requests with GET parameters: don't bother
+            # checking the cache.
+            return None
 
         if self.cache_anonymous_only and request.user.is_authenticated():
             request._cache_update_cache = False
-            return None # Don't cache requests from authenticated users.
+            # Don't cache requests from authenticated users.
+            return None
 
         if callable(self.key_prefix):
             key_prefix = self.key_prefix(request)
             if key_prefix is None:
                 request._cache_update_cache = False
-                return None # Don't bother checking the cache if key_prefix function returns magic "None" value.
+                # Don't bother checking the cache if key_prefix function
+                # returns magic "None" value.
+                return None
         else:
             key_prefix = self.key_prefix
 
@@ -91,15 +108,16 @@ class FetchFromCacheMiddleware(object):
 
         if cache_key is None:
             request._cache_update_cache = True
-            return None # No cache information available, need to rebuild.
+            # No cache information available, need to rebuild.
+            return None
 
         response = cache.get(cache_key, None)
         if response is None:
             request._cache_update_cache = True
-            return None # No cache information available, need to rebuild.
+            # No cache information available, need to rebuild.
+            return None
 
         request._cache_update_cache = False
-        #response.write('\n<!-- cache HIT -->\n')
         if self.post_process_response_always and self.post_process_response:
             response = self.post_process_response(response, request=request)
 
@@ -116,7 +134,11 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
     def __init__(self,
                  cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
                  key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
-                 cache_anonymous_only=getattr(settings, 'CACHE_MIDDLEWARE_ANONYMOUS_ONLY', False),
+                 cache_anonymous_only=getattr(
+                     settings,
+                     'CACHE_MIDDLEWARE_ANONYMOUS_ONLY',
+                     False
+                 ),
                  patch_headers=False,
                  post_process_response=None,
                  post_process_response_always=False):

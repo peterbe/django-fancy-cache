@@ -7,6 +7,7 @@ def _view(request):
     random_string = uuid.uuid4().hex
     return render(request, 'home.html', dict(random_string=random_string))
 
+
 @cache_page(60)
 def home(request):
     return _view(request)
@@ -18,6 +19,7 @@ def prefixer1(request):
         return None
     return 'a_key'
 
+
 @cache_page(60, key_prefix=prefixer1)
 def home2(request):
     return _view(request)
@@ -26,6 +28,7 @@ def home2(request):
 def post_processor1(response, request):
     response.content += 'In your HTML:%s' % uuid.uuid4().hex
     return response
+
 
 @cache_page(60,
             key_prefix=prefixer1,

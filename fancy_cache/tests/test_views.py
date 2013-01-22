@@ -1,7 +1,6 @@
 import re
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
-from django.conf import settings
 
 from . import views
 
@@ -55,17 +54,17 @@ def test_render_home3():
     ok_(re.findall('Random:\w+', response.content))
     random_string_1 = re.findall('Random:(\w+)', response.content)[0]
     ok_('In your HTML' in response.content)
-    extra_random_string_1 = re.findall('In your HTML:(\w+)', response.content)[0]
+    extra_random_1 = re.findall('In your HTML:(\w+)', response.content)[0]
 
     response = views.home3(request)
     eq_(response.status_code, 200)
     ok_(re.findall('Random:\w+', response.content))
     random_string_2 = re.findall('Random:(\w+)', response.content)[0]
-    extra_random_string_2 = re.findall('In your HTML:(\w+)', response.content)[0]
+    extra_random_2 = re.findall('In your HTML:(\w+)', response.content)[0]
     ok_('In your HTML' in response.content)
     eq_(random_string_1, random_string_2)
     # the post_process_response is only called once
-    eq_(extra_random_string_1, extra_random_string_2)
+    eq_(extra_random_1, extra_random_2)
 
 
 def test_render_home3_no_cache():
@@ -87,14 +86,14 @@ def test_render_home4():
     ok_(re.findall('Random:\w+', response.content))
     random_string_1 = re.findall('Random:(\w+)', response.content)[0]
     ok_('In your HTML' in response.content)
-    extra_random_string_1 = re.findall('In your HTML:(\w+)', response.content)[0]
+    extra_random_1 = re.findall('In your HTML:(\w+)', response.content)[0]
 
     response = views.home4(request)
     eq_(response.status_code, 200)
     ok_(re.findall('Random:\w+', response.content))
     random_string_2 = re.findall('Random:(\w+)', response.content)[0]
-    extra_random_string_2 = re.findall('In your HTML:(\w+)', response.content)[0]
+    extra_random_2 = re.findall('In your HTML:(\w+)', response.content)[0]
     ok_('In your HTML' in response.content)
     eq_(random_string_1, random_string_2)
     # the post_process_response is now called every time
-    ok_(extra_random_string_1 != extra_random_string_2)
+    ok_(extra_random_1 != extra_random_2)
