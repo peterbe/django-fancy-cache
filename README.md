@@ -27,32 +27,32 @@ How to use it
 
 In your Django views:
 
-        from fancy_cache import cache_page
+    from fancy_cache import cache_page
 
-	@cache_page(60 * 60)
-	def myview(request):
-	    return render(request, 'page1.html')
+    @cache_page(60 * 60)
+        def myview(request):
+            return render(request, 'page1.html')
 
-	def prefixer(request):
-	    if request.method != 'GET':
-	        return None
-	    if request.GET.get('no-cache'):
-	        return None
-	    return 'myprefix'
+    def prefixer(request):
+        if request.method != 'GET':
+            return None
+        if request.GET.get('no-cache'):
+            return None
+        return 'myprefix'
 
-	@cache_page(60 * 60, key_prefixer=prefixer)
-	def myotherview(request):
-	    return render(request, 'page2.html')
+    @cache_page(60 * 60, key_prefixer=prefixer)
+    def myotherview(request):
+        return render(request, 'page2.html')
 
-	def post_processor(response, request):
-	    response.content += '<!-- this was post processed -->'
-	    return response
+    def post_processor(response, request):
+        response.content += '<!-- this was post processed -->'
+        return response
 
-	@cache_page(60 * 60,
-	            key_prefixer=prefixer,
-		    post_process_response=post_processor)
-	def yetanotherotherview(request):
-	    return render(request, 'page3.html')
+    @cache_page(60 * 60,
+                key_prefixer=prefixer,
+            post_process_response=post_processor)
+    def yetanotherotherview(request):
+        return render(request, 'page3.html')
 
 
 Running the test suite
@@ -60,11 +60,11 @@ Running the test suite
 
 The simplest way is to simply run:
 
-        $ pip install -r requirements.txt
-        $ fab test
+    $ pip install -r requirements.txt
+    $ fab test
 
 Or to run it without `fab` you can simply run:
 
-        $ export PYTHONPATH=`pwd`
-	$ export DJANGO_SETTINGS_MODULE=fancy_cache.tests.settings
-	$ django-admin.py test
+    $ export PYTHONPATH=`pwd`
+    $ export DJANGO_SETTINGS_MODULE=fancy_cache.tests.settings
+    $ django-admin.py test
