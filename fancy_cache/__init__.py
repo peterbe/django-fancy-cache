@@ -1,2 +1,2 @@
-__version__ = '0.0'
+__version__ = '0.1'
 from cache_page import cache_page
