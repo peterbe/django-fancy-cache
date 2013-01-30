@@ -32,7 +32,7 @@ def find_version(*file_paths):
 
 
 setup(
-    name='fancy_cache',
+    name='django-fancy-cache',
     version=find_version('fancy_cache/__init__.py'),
     description='clears the junk out of your CSS',
 #    long_description=read('README.md') + '\n\n' +

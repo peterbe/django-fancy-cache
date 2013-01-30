@@ -1,0 +1,71 @@
+import time
+from django.shortcuts import render, redirect
+from fancy_cache import cache_page
+
+
+def home(request):
+    return render(request, 'home.html')
+
+
+def commafy(s):
+    r = []
+    for i, c in enumerate(reversed(str(s))):
+        if i and (not (i % 3)):
+            r.insert(0, ',')
+        r.insert(0, c)
+    return ''.join(r)
+
+
+@cache_page(10)
+def page1(request):
+    print "CACHE MISS", request.build_absolute_uri()
+    t0 = time.time()
+    result = sum(x for x in xrange(25000000))
+    t1 = time.time()
+    print t1 - t0
+    return render(
+        request,
+        'page.html',
+        dict(result=commafy(result), page='1')
+    )
+
+
+def key_prefixer(request):
+    # if it's not there, don't cache
+    return request.GET.get('number')
+
+@cache_page(10, key_prefix=key_prefixer)
+def page2(request):
+    if not request.GET.get('number'):
+        return redirect(request.build_absolute_uri() + '?number=25000000')
+    print "CACHE MISS", request.build_absolute_uri()
+    t0 = time.time()
+    result = sum(x for x in xrange(25000000))
+    t1 = time.time()
+    print t1 - t0
+    return render(
+        request,
+        'page.html',
+        dict(result=commafy(result), page='2')
+    )
+
+
+def post_processor(response, request):
+    response.content = response.content.replace(
+        '</body>',
+        '<footer>Kilroy was here!</footer></body>'
+    )
+    return response
+
+@cache_page(10, post_process_response=post_processor)
+def page3(request):
+    print "CACHE MISS", request.build_absolute_uri()
+    t0 = time.time()
+    result = sum(x for x in xrange(25000000))
+    t1 = time.time()
+    print t1 - t0
+    return render(
+        request,
+        'page.html',
+        dict(result=commafy(result), page='3')
+    )
