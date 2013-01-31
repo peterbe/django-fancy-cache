@@ -6,10 +6,18 @@
         <meta name="viewport" content="width=device-width">
     </head>
     <body>
+    <p>Open each of these pages. You'll notice that they're initially
+    very slow. That's because they're expensive view functions.
+    After loading them a second time (within 10 seconds) you'll notice
+    that they're incredibly fast.
+    </p>
+
     <ul>
       <li><a href="{% url 'page1' %}">Page 1</a></li>
       <li><a href="{% url 'page2' %}">Page 2</a></li>
       <li><a href="{% url 'page3' %}">Page 3</a></li>
+      <li><a href="{% url 'page4' %}">Page 4</a></li>
+      <li><a href="{% url 'page5' %}">Page 5</a></li>
     </ul>
     </body>
 </html>

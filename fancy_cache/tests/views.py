@@ -39,7 +39,11 @@ def home3(request):
 
 @cache_page(60,
             key_prefix=prefixer1,
-            post_process_response=post_processor1,
-            post_process_response_always=True)
+            post_process_response_always=post_processor1)
 def home4(request):
+    return _view(request)
+
+
+@cache_page(60, only_get_keys=['foo', 'bar'])
+def home5(request):
     return _view(request)

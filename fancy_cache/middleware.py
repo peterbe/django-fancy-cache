@@ -1,11 +1,28 @@
+import cgi
+import functools
+import urllib
+
 from django.conf import settings
 from django.core.cache import cache
+from django.utils.encoding import iri_to_uri
 from django.utils.cache import (
     get_cache_key,
     learn_cache_key,
     patch_response_headers,
     get_max_age
 )
+
+
+def get_full_path(self, only_keys):
+    """modified version of django.http.request.Request.get_full_path
+    with the ability to return a different query string based on
+    `only_keys`
+    """
+    qs = self.META.get('QUERY_STRING', '')
+    parsed = cgi.parse_qs(qs)
+    keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
+    qs = urllib.urlencode(keep, True)
+    return '%s%s' % (self.path, ('?' + iri_to_uri(qs)) if qs else '')
 
 
 class UpdateCacheMiddleware(object):
@@ -57,7 +74,21 @@ class UpdateCacheMiddleware(object):
                     response,
                     request
                 )
+            if self.post_process_response_always:
+                response = self.post_process_response_always(
+                    response,
+                    request
+                )
+            if self.only_get_keys:
+                _get_full_path = request.get_full_path
+                request.get_full_path = functools.partial(
+                    get_full_path,
+                    request,
+                    self.only_get_keys
+                )
             cache_key = learn_cache_key(request, response, timeout, key_prefix)
+            if self.only_get_keys:
+                request.get_full_path = _get_full_path
             cache.set(cache_key, response, timeout)
         return response
 
@@ -83,7 +114,7 @@ class FetchFromCacheMiddleware(object):
             # Don't bother checking the cache.
             return None
 
-        if request.GET and not callable(self.key_prefix):
+        if request.GET and not callable(self.key_prefix) and not self.only_get_keys:
             request._cache_update_cache = False
             # Default behaviour for requests with GET parameters: don't bother
             # checking the cache.
@@ -104,7 +135,16 @@ class FetchFromCacheMiddleware(object):
         else:
             key_prefix = self.key_prefix
 
+        if self.only_get_keys:
+            _get_full_path = request.get_full_path
+            request.get_full_path = functools.partial(
+                get_full_path,
+                request,
+                self.only_get_keys
+            )
         cache_key = get_cache_key(request, key_prefix)
+        if self.only_get_keys:
+            request.get_full_path = _get_full_path
 
         if cache_key is None:
             request._cache_update_cache = True
@@ -118,8 +158,8 @@ class FetchFromCacheMiddleware(object):
             return None
 
         request._cache_update_cache = False
-        if self.post_process_response_always and self.post_process_response:
-            response = self.post_process_response(response, request=request)
+        if self.post_process_response_always:
+            response = self.post_process_response_always(response, request=request)
 
         return response
 
@@ -130,6 +170,36 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
 
     Also used as the hook point for the cache decorator, which is generated
     using the decorator-from-middleware utility.
+
+    :param cache_timeout:
+        How many seconds to cache the page. This is ignored if the view sets a
+        Cache-Control header with a max-age.
+
+    :param key_prefix:
+        Either a string or a callable function. If it's a callable function,
+        it's called with the request as the first and only argument.
+
+    :param cache_anonymous_only:
+        Guess!
+
+    :param patch_headers:
+        Basically, if you set a cache_timeout of 60 it additionally sets a
+        Expires header with that timeout.
+
+    :param post_process_response:
+        Callable function that gets called with the response (and request) just
+        before the response gets set in cache.
+
+    :param post_process_response_always:
+        Callable function that gets called with the response (and request) every
+        time the response goes through the middleware cached or not.
+
+    :param only_get_keys:
+        List of query string keys to reduce the cache key to. Without this a
+        GET /some/path?foo=bar and /some/path?foo=bar&other=junk gets two
+        different cache keys when it could be that the `other=junk` parameter
+        doesn't change anything.
+
     """
     def __init__(self,
                  cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
@@ -141,10 +211,14 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
                  ),
                  patch_headers=False,
                  post_process_response=None,
-                 post_process_response_always=False):
+                 post_process_response_always=None,
+                 only_get_keys=None):
         self.patch_headers = patch_headers
         self.cache_timeout = cache_timeout
         self.key_prefix = key_prefix
         self.cache_anonymous_only = cache_anonymous_only
         self.post_process_response = post_process_response
         self.post_process_response_always = post_process_response_always
+        if isinstance(only_get_keys, basestring):
+            only_get_keys = [only_get_keys]
+        self.only_get_keys = only_get_keys
