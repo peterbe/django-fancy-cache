@@ -12,7 +12,7 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 os.environ['PYTHONPATH'] = ROOT
 
 
-def test():
+def _test(extra_args):
     """Run test suite."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'fancy_tests.tests.settings'
     os.environ['REUSE_DB'] = '0'
@@ -21,4 +21,11 @@ def test():
     local('django-admin.py syncdb --noinput')
     local('django-admin.py flush --noinput')
 
-    local('django-admin.py test -s')
+    local('django-admin.py test %s' % extra_args)
+
+def test():
+    _test('-s')
+
+def coverage():
+    _test('-s --with-coverage --cover-erase --cover-html '
+          '--cover-package=fancy_cache')

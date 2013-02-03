@@ -3,3 +3,4 @@ build/
 fancy_cache.egg-info/
 dist/
 django_fancy_cache.egg-info/
+cover/
