@@ -14,6 +14,10 @@ from django.utils.cache import (
 )
 
 
+REMEMBERED_URLS_KEY = 'fancy-urls'
+LONG_TIME = 60 * 60 * 24 * 30
+
+
 class RequestPath(object):
     def __init__(self, request, only_get_keys):
         self.request = request
@@ -102,6 +106,11 @@ class UpdateCacheMiddleware(object):
                     timeout,
                     key_prefix
                 )
+
+                if self.remember_all_urls:
+                    self.remember_url(request, cache_key, timeout)
+
+            #print "SET %s (%s)" %(request.path, timeout)
             cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
@@ -111,6 +120,16 @@ class UpdateCacheMiddleware(object):
             )
 
         return response
+
+    def remember_url(self, request, cache_key, timeout):
+        url = request.get_full_path()
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+        remembered_urls[url] = cache_key
+        cache.set(
+            REMEMBERED_URLS_KEY,
+            remembered_urls,
+            LONG_TIME
+        )
 
 
 class FetchFromCacheMiddleware(object):
@@ -126,6 +145,22 @@ class FetchFromCacheMiddleware(object):
         Checks whether the page is already cached and returns the cached
         version if available.
         """
+        response = self._process_request(request)
+        if self.remember_stats_all_urls:
+            # then we're nosy
+            cache_key = request.get_full_path()
+            if response is None:
+                cache_key += '__misses'
+                #print "**Cache Miss**", request.path
+            else:
+                cache_key += '__hits'
+            if cache.get(cache_key) is None:
+                cache.set(cache_key, 0, LONG_TIME)
+            cache.incr(cache_key)
+                #print "**Cache HIT!**", request.path
+        return response
+
+    def _process_request(self, request):
         if self.cache_anonymous_only:
             if not hasattr(request, 'user'):
                 raise ImproperlyConfigured(
@@ -227,6 +262,14 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         different cache keys when it could be that the `other=junk` parameter
         doesn't change anything.
 
+    :param remember_all_urls:
+        With this option you can have all cached URLs stored in cache which
+        can make it easy to do things like cache invalidation by URL.
+
+    :param remember_stats_all_urls:
+        Only applicable if `remember_all_urls` is set. This stores a count
+        of the number of times a `cache_page` hits and misses.
+
     """
     def __init__(self,
                  cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
@@ -239,7 +282,18 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
                  patch_headers=False,
                  post_process_response=None,
                  post_process_response_always=None,
-                 only_get_keys=None):
+                 only_get_keys=None,
+                 remember_all_urls=getattr(
+                     settings,
+                     'FANCY_REMEMBER_ALL_URLS',
+                     False
+                 ),
+                 remember_stats_all_urls=getattr(
+                     settings,
+                     'FANCY_REMEMBER_STATS_ALL_URLS',
+                     False
+                 ),
+                 ):
         self.patch_headers = patch_headers
         self.cache_timeout = cache_timeout
         self.key_prefix = key_prefix
@@ -249,3 +303,5 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         if isinstance(only_get_keys, basestring):
             only_get_keys = [only_get_keys]
         self.only_get_keys = only_get_keys
+        self.remember_all_urls = remember_all_urls
+        self.remember_stats_all_urls = remember_stats_all_urls

@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<style>
+.cachekey { font-size:70%; }
+table { width: 99%; }
+</style>
+</head>
+
+<h2>
+  Stats about
+  <a href="https://github.com/peterbe/django-fancy-cache">django-fancy-cache</a>
+  usage
+</h2>
+
+{% if not remember_all_urls_setting %}
+<h4>
+  <span style="color:red">Note!</span>
+  You do not have <code>FANCY_REMEMBER_ALL_URLS</code> set in your
+  settings so cached URLs will not be recorded unless explicitely
+  set on the <code>cache_page</code> decorator.
+</h4>
+{% else %}
+  {% if not remember_stats_all_urls_setting %}
+  <h4>
+    <span style="color:red">Note!</span>
+    You do not have <code>FANCY_REMEMBER_STATS_ALL_URLS</code> set in your
+    settings so statistics about hits and misses will <em>not</em> be recorded.
+  </h4>
+  {% endif %}
+
+{% endif %}
+
+{% for url, cache_key, stats in found %}
+  {% if forloop.first %}
+  <table>
+    <tr>
+      <th>Path</th>
+      <th>Cache key</th>
+      <th>Hits</th>
+      <th>Misses</th>
+    </tr>
+  {% endif %}
+  <tr>
+    <td><a href="{{ url }}">{{ url }}</a></td>
+    <td class="cachekey">{{ cache_key }}</td>
+    {% if stats %}
+    <td>{{ stats.hits }}</td>
+    <td>{{ stats.misses }}</td>
+    {% else %}
+    <td>-</td>
+    <td>-</td>
+    {% endif %}
+  </tr>
+  {% if forloop.last %}
+  </table>
+  {% endif %}
+{% endfor %}
+
+{% if not found %}
+<p>No found URLs in the cache at the moment.
+</p>
+{% endif %}
+</html>

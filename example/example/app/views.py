@@ -1,10 +1,24 @@
 import time
+from cStringIO import StringIO
+from pprint import pprint
+
 from django.shortcuts import render, redirect
+from django.core.cache import cache
+
 from fancy_cache import cache_page
+from fancy_cache.middleware import REMEMBERED_URLS_KEY
 
 
 def home(request):
-    return render(request, 'home.html')
+    remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+    out = StringIO()
+    pprint(remembered_urls, out)
+    remembered_urls = out.getvalue()
+    return render(
+        request,
+        'home.html',
+        {'remembered_urls': remembered_urls}
+    )
 
 
 def commafy(s):
@@ -16,7 +30,7 @@ def commafy(s):
     return ''.join(r)
 
 
-@cache_page(10)
+@cache_page(60)
 def page1(request):
     print "CACHE MISS", request.build_absolute_uri()
     t0 = time.time()
@@ -35,7 +49,7 @@ def key_prefixer(request):
     return request.GET.get('number')
 
 
-@cache_page(10, key_prefix=key_prefixer)
+@cache_page(60, key_prefix=key_prefixer)
 def page2(request):
     if not request.GET.get('number'):
         return redirect(request.build_absolute_uri() + '?number=25000000')
@@ -59,7 +73,7 @@ def post_processor(response, request):
     return response
 
 
-@cache_page(10, post_process_response=post_processor)
+@cache_page(60, post_process_response=post_processor)
 def page3(request):
     print "CACHE MISS", request.build_absolute_uri()
     t0 = time.time()
@@ -84,7 +98,7 @@ def post_processor_always(response, request):
     return response
 
 
-@cache_page(10, post_process_response_always=post_processor_always)
+@cache_page(60, post_process_response_always=post_processor_always)
 def page4(request):
     print "CACHE MISS", request.build_absolute_uri()
     t0 = time.time()
@@ -98,7 +112,7 @@ def page4(request):
     )
 
 
-@cache_page(20, only_get_keys=['foo', 'bar'])
+@cache_page(60, only_get_keys=['foo', 'bar'])
 def page5(request):
     print "CACHE MISS", request.build_absolute_uri()
     t0 = time.time()

@@ -21,4 +21,4 @@ def test():
     local('django-admin.py syncdb --noinput')
     local('django-admin.py flush --noinput')
 
-    local('django-admin.py test')
+    local('django-admin.py test -s')
