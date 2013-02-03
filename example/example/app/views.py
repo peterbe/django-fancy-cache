@@ -73,6 +73,7 @@ def page3(request):
 def post_processor_always(response, request):
     import datetime
     now = datetime.datetime.now()
+    assert 'Right here right now' not in response.content, 'already there!'
     response.content = response.content.replace(
         '</body>',
         '<footer>Right here right now %s</footer></body>' % now

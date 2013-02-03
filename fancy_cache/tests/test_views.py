@@ -96,7 +96,7 @@ class TestViews(unittest.TestCase):
         # the post_process_response is now called every time
         ok_(extra_random_1 != extra_random_2)
 
-    def test_render_home4(self):
+    def test_render_home5(self):
         request = self.factory.get('/4', {'foo': 'bar'})
         response = views.home5(request)
         eq_(response.status_code, 200)

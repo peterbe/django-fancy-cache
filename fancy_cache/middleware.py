@@ -93,15 +93,17 @@ class UpdateCacheMiddleware(object):
                     response,
                     request
                 )
-            if self.post_process_response_always:
-                response = self.post_process_response_always(
-                    response,
-                    request
-                )
 
             with RequestPath(request, self.only_get_keys):
                 cache_key = learn_cache_key(request, response, timeout, key_prefix)
             cache.set(cache_key, response, timeout)
+
+        if self.post_process_response_always:
+            response = self.post_process_response_always(
+                response,
+                request
+            )
+
         return response
 
 

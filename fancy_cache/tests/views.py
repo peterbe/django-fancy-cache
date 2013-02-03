@@ -26,6 +26,7 @@ def home2(request):
 
 
 def post_processor1(response, request):
+    assert 'In your HTML' not in response.content
     response.content += 'In your HTML:%s' % uuid.uuid4().hex
     return response
 
