@@ -13,16 +13,35 @@ from django.utils.cache import (
 )
 
 
-def get_full_path(self, only_keys):
-    """modified version of django.http.request.Request.get_full_path
-    with the ability to return a different query string based on
-    `only_keys`
-    """
-    qs = self.META.get('QUERY_STRING', '')
-    parsed = cgi.parse_qs(qs)
-    keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
-    qs = urllib.urlencode(keep, True)
-    return '%s%s' % (self.path, ('?' + iri_to_uri(qs)) if qs else '')
+class RequestPath(object):
+    def __init__(self, request, only_get_keys):
+        self.request = request
+        self.only_get_keys = only_get_keys
+        self._prev_get_full_path = request.get_full_path
+
+    def __enter__(self):
+        if self.only_get_keys:
+            # then monkey patch self.request.get_full_path
+            self.request.get_full_path = functools.partial(
+                self.get_full_path,
+                self.request,
+                self.only_get_keys
+            )
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.only_get_keys:
+            self.request.get_full_path = self._prev_get_full_path
+
+    def get_full_path(self, this, only_keys):
+        """modified version of django.http.request.Request.get_full_path
+        with the ability to return a different query string based on
+        `only_keys`
+        """
+        qs = this.META.get('QUERY_STRING', '')
+        parsed = cgi.parse_qs(qs)
+        keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
+        qs = urllib.urlencode(keep, True)
+        return '%s%s' % (this.path, ('?' + iri_to_uri(qs)) if qs else '')
 
 
 class UpdateCacheMiddleware(object):
@@ -79,16 +98,9 @@ class UpdateCacheMiddleware(object):
                     response,
                     request
                 )
-            if self.only_get_keys:
-                _get_full_path = request.get_full_path
-                request.get_full_path = functools.partial(
-                    get_full_path,
-                    request,
-                    self.only_get_keys
-                )
-            cache_key = learn_cache_key(request, response, timeout, key_prefix)
-            if self.only_get_keys:
-                request.get_full_path = _get_full_path
+
+            with RequestPath(request, self.only_get_keys):
+                cache_key = learn_cache_key(request, response, timeout, key_prefix)
             cache.set(cache_key, response, timeout)
         return response
 
@@ -135,16 +147,8 @@ class FetchFromCacheMiddleware(object):
         else:
             key_prefix = self.key_prefix
 
-        if self.only_get_keys:
-            _get_full_path = request.get_full_path
-            request.get_full_path = functools.partial(
-                get_full_path,
-                request,
-                self.only_get_keys
-            )
-        cache_key = get_cache_key(request, key_prefix)
-        if self.only_get_keys:
-            request.get_full_path = _get_full_path
+        with RequestPath(request, self.only_get_keys):
+            cache_key = get_cache_key(request, key_prefix)
 
         if cache_key is None:
             request._cache_update_cache = True
