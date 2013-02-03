@@ -2,6 +2,7 @@ import cgi
 import functools
 import urllib
 
+from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.encoding import iri_to_uri
@@ -95,7 +96,12 @@ class UpdateCacheMiddleware(object):
                 )
 
             with RequestPath(request, self.only_get_keys):
-                cache_key = learn_cache_key(request, response, timeout, key_prefix)
+                cache_key = learn_cache_key(
+                    request,
+                    response,
+                    timeout,
+                    key_prefix
+                )
             cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
@@ -121,14 +127,26 @@ class FetchFromCacheMiddleware(object):
         version if available.
         """
         if self.cache_anonymous_only:
-            assert hasattr(request, 'user'), "The Django cache middleware with CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires authentication middleware to be installed. Edit your MIDDLEWARE_CLASSES setting to insert 'django.contrib.auth.middleware.AuthenticationMiddleware' before the CacheMiddleware."
+            if not hasattr(request, 'user'):
+                raise ImproperlyConfigured(
+                    "The Django cache middleware with "
+                    "CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires "
+                    "authentication middleware to be installed. Edit your "
+                    "MIDDLEWARE_CLASSES setting to insert "
+                    "'django.contrib.auth.middleware.AuthenticationMiddleware'"
+                    "before the CacheMiddleware."
+                )
 
         if not request.method in ('GET', 'HEAD'):
             request._cache_update_cache = False
             # Don't bother checking the cache.
             return None
 
-        if request.GET and not callable(self.key_prefix) and not self.only_get_keys:
+        if (
+            request.GET and
+            not callable(self.key_prefix) and
+            not self.only_get_keys
+        ):
             request._cache_update_cache = False
             # Default behaviour for requests with GET parameters: don't bother
             # checking the cache.
@@ -165,7 +183,10 @@ class FetchFromCacheMiddleware(object):
 
         request._cache_update_cache = False
         if self.post_process_response_always:
-            response = self.post_process_response_always(response, request=request)
+            response = self.post_process_response_always(
+                response,
+                request=request
+            )
 
         return response
 
@@ -197,8 +218,8 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         before the response gets set in cache.
 
     :param post_process_response_always:
-        Callable function that gets called with the response (and request) every
-        time the response goes through the middleware cached or not.
+        Callable function that gets called with the response (and request)
+        every time the response goes through the middleware cached or not.
 
     :param only_get_keys:
         List of query string keys to reduce the cache key to. Without this a

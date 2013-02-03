@@ -34,6 +34,7 @@ def key_prefixer(request):
     # if it's not there, don't cache
     return request.GET.get('number')
 
+
 @cache_page(10, key_prefix=key_prefixer)
 def page2(request):
     if not request.GET.get('number'):
@@ -57,6 +58,7 @@ def post_processor(response, request):
     )
     return response
 
+
 @cache_page(10, post_process_response=post_processor)
 def page3(request):
     print "CACHE MISS", request.build_absolute_uri()
@@ -70,6 +72,7 @@ def page3(request):
         dict(result=commafy(result), page='3')
     )
 
+
 def post_processor_always(response, request):
     import datetime
     now = datetime.datetime.now()
@@ -79,6 +82,7 @@ def post_processor_always(response, request):
         '<footer>Right here right now %s</footer></body>' % now
     )
     return response
+
 
 @cache_page(10, post_process_response_always=post_processor_always)
 def page4(request):
