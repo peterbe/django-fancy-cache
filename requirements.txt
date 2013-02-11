@@ -3,3 +3,4 @@ mock>=0.8.0
 Django>=1.4.3
 django-nose
 fabric
+sphinx
