@@ -14,7 +14,7 @@ os.environ['PYTHONPATH'] = ROOT
 
 def test():
     """Run test suite."""
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'fancy_cache.tests.settings'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'fancy_tests.tests.settings'
     os.environ['REUSE_DB'] = '0'
 
     # Add tables and flush DB

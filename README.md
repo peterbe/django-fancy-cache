@@ -160,5 +160,5 @@ The simplest way is to simply run:
 Or to run it without `fab` you can simply run:
 
     $ export PYTHONPATH=`pwd`
-    $ export DJANGO_SETTINGS_MODULE=fancy_cache.tests.settings
+    $ export DJANGO_SETTINGS_MODULE=fancy_tests.tests.settings
     $ django-admin.py test

@@ -29,4 +29,4 @@ INSTALLED_APPS = (
 )
 
 
-ROOT_URLCONF = 'fancy_cache.tests.urls'
+ROOT_URLCONF = 'fancy_tests.tests.urls'
