@@ -22,8 +22,30 @@
     <hr>
     <p>This is just for the uber-curious about what's going on. These are the current
     remembered URLs:</p>
-    <pre>
-{{ remembered_urls }}
-    </pre>
+
+      {% for url, key, stats in remembered_urls %}
+      {% if forloop.first %}
+      <table>
+        <tr>
+          <td>URL</td>
+          <td>Cache key</td>
+          <td>Hits</td>
+          <td>Misses</td>
+        </tr>
+      {% endif %}
+      <tr>
+        <td><a href="{{ url }}">{{ url }}</a></td>
+        <td><code style="font-size:80%">{{ key }}</code></td>
+        {% if stats %}
+        <td>{{ stats.hits }}</td>
+        <td>{{ stats.misses }}</td>
+        {% else %}
+        <td colspan="2">n/a</a>
+        {% endif %}
+      </tr>
+      {% if forloop.last %}
+      </table>
+      {% endif %}
+      {% endfor %}
     </body>
 </html>

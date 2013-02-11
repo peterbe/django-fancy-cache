@@ -110,7 +110,6 @@ class UpdateCacheMiddleware(object):
                 if self.remember_all_urls:
                     self.remember_url(request, cache_key, timeout)
 
-            #print "SET %s (%s)" %(request.path, timeout)
             cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
@@ -151,13 +150,11 @@ class FetchFromCacheMiddleware(object):
             cache_key = request.get_full_path()
             if response is None:
                 cache_key += '__misses'
-                #print "**Cache Miss**", request.path
             else:
                 cache_key += '__hits'
             if cache.get(cache_key) is None:
                 cache.set(cache_key, 0, LONG_TIME)
             cache.incr(cache_key)
-                #print "**Cache HIT!**", request.path
         return response
 
     def _process_request(self, request):

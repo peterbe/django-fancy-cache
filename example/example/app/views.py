@@ -1,19 +1,13 @@
 import time
-from cStringIO import StringIO
-from pprint import pprint
 
 from django.shortcuts import render, redirect
-from django.core.cache import cache
 
 from fancy_cache import cache_page
-from fancy_cache.middleware import REMEMBERED_URLS_KEY
+from fancy_cache.memory import find_urls
 
 
 def home(request):
-    remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
-    out = StringIO()
-    pprint(remembered_urls, out)
-    remembered_urls = out.getvalue()
+    remembered_urls = find_urls([])
     return render(
         request,
         'home.html',
