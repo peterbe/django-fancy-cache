@@ -1,3 +1,6 @@
+import os
+_this_wo_ext = os.path.basename(__file__).rsplit('.', 1)[0]
+
 __doc__ = """
 If you enable `FANCY_REMEMBER_ALL_URLS` then every URL take is turned
 into a cache key for cache_page() to remember is recorded.
@@ -19,7 +22,7 @@ running this will purge all cached URLs::
 If you enable `FANCY_REMEMBER_STATS_ALL_URLS` you can get a tally for each
 URL how many cache HITS and MISSES it has had.
 
-""" % dict(this_file=__file__)
+""" % dict(this_file=_this_wo_ext)
 
 from optparse import make_option
 
