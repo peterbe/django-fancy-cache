@@ -21,10 +21,10 @@ def _urls_to_regexes(urls):
     for each in urls:
         parts = each.split('*')
         if len(parts) == 1:
-            regexes.append(re.compile(re.escape(parts[0])))
+            regexes.append(re.compile('^%s$' % re.escape(parts[0])))
         else:
             _re = '.*'.join(re.escape(x) for x in parts)
-            regexes.append(re.compile(_re))
+            regexes.append(re.compile('^%s$' % _re))
     return regexes
 
 
