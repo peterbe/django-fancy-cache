@@ -48,3 +48,8 @@ def home4(request):
 @cache_page(60, only_get_keys=['foo', 'bar'])
 def home5(request):
     return _view(request)
+
+
+@cache_page(60, remember_stats_all_urls=True, remember_all_urls=True)
+def home6(request):
+    return _view(request)

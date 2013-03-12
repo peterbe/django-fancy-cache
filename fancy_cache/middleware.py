@@ -1,6 +1,7 @@
 import cgi
 import functools
 import urllib
+import hashlib
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
@@ -16,6 +17,10 @@ from django.utils.cache import (
 
 REMEMBERED_URLS_KEY = 'fancy-urls'
 LONG_TIME = 60 * 60 * 24 * 30
+
+
+def md5(x):
+    return hashlib.md5(x).hexdigest()
 
 
 class RequestPath(object):
@@ -152,6 +157,7 @@ class FetchFromCacheMiddleware(object):
                 cache_key += '__misses'
             else:
                 cache_key += '__hits'
+            cache_key = md5(cache_key)
             if cache.get(cache_key) is None:
                 cache.set(cache_key, 0, LONG_TIME)
             cache.incr(cache_key)
@@ -174,15 +180,15 @@ class FetchFromCacheMiddleware(object):
             # Don't bother checking the cache.
             return None
 
-        if (
-            request.GET and
-            not callable(self.key_prefix) and
-            not self.only_get_keys
-        ):
-            request._cache_update_cache = False
-            # Default behaviour for requests with GET parameters: don't bother
-            # checking the cache.
-            return None
+        #if (
+        #    request.GET and
+        #    not callable(self.key_prefix) and
+        #    not self.only_get_keys
+        #):
+        #    request._cache_update_cache = False
+        #    # Default behaviour for requests with GET parameters: don't bother
+        #    # checking the cache.
+        #    return None
 
         if self.cache_anonymous_only and request.user.is_authenticated():
             request._cache_update_cache = False

@@ -20,6 +20,9 @@ class TestMemory(unittest.TestCase):
             cache.set(value, key)
         cache.set(REMEMBERED_URLS_KEY, self.urls, 5)
 
+    def tearDown(self):
+        cache.clear()
+
     def test_find_all_urls(self):
         found = list(find_urls([]))
         eq_(len(found), 4)
