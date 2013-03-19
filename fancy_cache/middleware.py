@@ -24,13 +24,14 @@ def md5(x):
 
 
 class RequestPath(object):
-    def __init__(self, request, only_get_keys):
+    def __init__(self, request, only_get_keys, setcache=False):
         self.request = request
         self.only_get_keys = only_get_keys
         self._prev_get_full_path = request.get_full_path
+        self.api_key = getattr(settings, 'FANCY_CACHE_SETCACHE_KEY', None)
 
     def __enter__(self):
-        if self.only_get_keys:
+        if self.only_get_keys or self.api_key:
             # then monkey patch self.request.get_full_path
             self.request.get_full_path = functools.partial(
                 self.get_full_path,
@@ -49,7 +50,21 @@ class RequestPath(object):
         """
         qs = this.META.get('QUERY_STRING', '')
         parsed = cgi.parse_qs(qs)
-        keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
+        if self.api_key and 'setcache' in parsed and \
+            parsed['setcache'] == [self.api_key]:
+            # delete in the response phase so the cache key does not include setcache
+            if getattr(self.request, '_cache_update_cache', False):
+                del parsed['setcache']
+            else:
+                self.request._cache_update_cache = True
+                # keep the setcache in the request phase to
+                # ensure we don't return a cached response
+                if only_keys:
+                    only_keys.append('setcache')
+        if only_keys:
+            keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
+        else:
+            keep = parsed
         qs = urllib.urlencode(keep, True)
         return '%s%s' % (this.path, ('?' + iri_to_uri(qs)) if qs else '')
 
