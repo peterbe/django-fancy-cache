@@ -28,7 +28,7 @@ class RequestPath(object):
         self.request = request
         self.only_get_keys = only_get_keys
         self._prev_get_full_path = request.get_full_path
-        self.api_key = getattr(settings, 'FANCY_CACHE_SETCACHE_KEY', None)
+        self.api_key = getattr(settings, 'FANCY_CACHE_SETCACHE_KEY', settings.SECRET_KEY)
 
     def __enter__(self):
         if self.only_get_keys or self.api_key:
