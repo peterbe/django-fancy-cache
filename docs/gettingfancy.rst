@@ -114,6 +114,30 @@ example of that::
         return render(request, 'dashboard.html', {'stuff': stuff})
 
 
+Keeping your cache hot
+-----------------------
+
+Invalidation works fine for performant views but what about slow views.
+Ideally you'd refactor them to make them more perfomant but sometimes that's
+an expensive or impractical option. Simply append ``?setcache=<secret_key>``
+to your url::
+
+    $ curl https://example.com/slowview/?setcache=<secret_key> > /dev/null
+
+If the setcache value matches your setting's ``SECRET_KEY`` then the
+cache will always be set regardless of the timeout on the cache content matching
+https://example.com/slowview/.
+
+In the event that you need to use an insecure method for calling the setcache
+you should set ``FANCY_CACHE_SETCACHE_KEY`` which will be used instead of the
+``SECRET_KEY``. Setting ``FANCY_CACHE_SETCACHE_KEY = None`` will disable the
+setcache behaviour.
+
+To keep your cache hot you could use an external service to ping your
+urls or setup a scheduled management command that crawls them internally
+with the django test client.
+
+
 Remembering what's cached
 -------------------------
 
