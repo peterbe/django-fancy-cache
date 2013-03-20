@@ -43,7 +43,7 @@ class TestRequestPathSetCache(TestCase):
         self.assertEqual(path, '/blog/?page=2&setcache=1234')
         self.assertTrue(self.request._cache_update_cache)
 
-@override_settings(FANCY_CACHE_SETCACHE_KEY = '1234')
+
 class TestRequestPathSetCacheIncorrectly(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -60,7 +60,6 @@ class TestRequestPathSetCacheIncorrectly(TestCase):
                          and self.request._cache_update_cache)
 
 
-@override_settings(FANCY_CACHE_SETCACHE_KEY = '1234')
 class TestViewsWithSetCache(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -77,7 +76,7 @@ class TestViewsWithSetCache(TestCase):
         random_string_1 = re.findall('Random:(\w+)', response.content)[0]
 
         # punch a hole in the cache with setcache
-        request2 = self.factory.get('/pardon/?setcache=1234')
+        request2 = self.factory.get('/pardon/?setcache=anything')
         response = views.home(request2)
         eq_(response.status_code, 200)
         random_string_2 = re.findall('Random:(\w+)', response.content)[0]
@@ -91,16 +90,3 @@ class TestViewsWithSetCache(TestCase):
         eq_(random_string_2, random_string_3)
 
         self.assertNotEqual(random_string_3, random_string_1)
-
-
-
-
-
-
-
-
-
-
-
-
-
