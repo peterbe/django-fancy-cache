@@ -30,7 +30,7 @@ class RequestPath(object):
         self._prev_get_full_path = request.get_full_path
 
     def __enter__(self):
-        if self.only_get_keys:
+        if self.only_get_keys is not None:
             # then monkey patch self.request.get_full_path
             self.request.get_full_path = functools.partial(
                 self.get_full_path,
@@ -39,7 +39,7 @@ class RequestPath(object):
             )
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.only_get_keys:
+        if self.only_get_keys is not None:
             self.request.get_full_path = self._prev_get_full_path
 
     def get_full_path(self, this, only_keys):
