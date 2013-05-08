@@ -128,7 +128,7 @@ class TestViews(unittest.TestCase):
         eq_(response.status_code, 200)
 
         # now ask the memory thing
-        match, = find_urls('/anything')
+        match, = find_urls(urls=['/anything'])
         eq_(match[0], '/anything')
         eq_(match[2]['hits'], 0)
         eq_(match[2]['misses'], 1)
@@ -136,7 +136,7 @@ class TestViews(unittest.TestCase):
         # second time
         response = views.home6(request)
         eq_(response.status_code, 200)
-        match, = find_urls('/anything')
+        match, = find_urls(urls=['/anything'])
         eq_(match[0], '/anything')
         eq_(match[2]['hits'], 1)
         eq_(match[2]['misses'], 1)

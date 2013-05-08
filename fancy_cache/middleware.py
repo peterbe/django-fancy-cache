@@ -1,7 +1,6 @@
 import cgi
 import functools
 import urllib
-import hashlib
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
@@ -14,13 +13,11 @@ from django.utils.cache import (
     get_max_age
 )
 
+from fancy_cache.utils import md5
+
 
 REMEMBERED_URLS_KEY = 'fancy-urls'
 LONG_TIME = 60 * 60 * 24 * 30
-
-
-def md5(x):
-    return hashlib.md5(x).hexdigest()
 
 
 class RequestPath(object):
