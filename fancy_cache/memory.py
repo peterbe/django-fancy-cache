@@ -1,15 +1,11 @@
 import re
-import hashlib
 
 from django.core.cache import cache
 
 from fancy_cache.middleware import REMEMBERED_URLS_KEY, LONG_TIME
+from fancy_cache.utils import md5
 
 __all__ = ('find_urls',)
-
-
-def md5(x):
-    return hashlib.md5(x).hexdigest()
 
 
 def _match(url, regexes):
