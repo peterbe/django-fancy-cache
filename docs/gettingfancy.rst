@@ -148,7 +148,10 @@ new comment is added::
     def invalidate_latest_comment_timestamp(sender, instance, **kwargs):
         post_pk = instance.post.pk
         post_url = reverse('blog:post', args=(post_pk,))
-        find_urls([post_url], purge=True)
+        list(find_urls([post_url], purge=True))
+ 
+Note: Since find_urls() returns a generator, the purging won't happen unless you exhaust the generator.
+E.g. looping over it or turning it into a list. 
 
 Voila! As soon as a new comment is added to a post, all cached URLs
 with that URL are purged from the cache.
