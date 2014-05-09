@@ -21,9 +21,11 @@ LONG_TIME = 60 * 60 * 24 * 30
 
 
 class RequestPath(object):
-    def __init__(self, request, only_get_keys):
+    def __init__(self, request, only_get_keys, forget_get_keys):
         self.request = request
         self.only_get_keys = only_get_keys
+        self.forget_get_keys = forget_get_keys
+        assert not (self.only_get_keys and self.forget_get_keys)
         self._prev_get_full_path = request.get_full_path
 
     def __enter__(self):
@@ -32,21 +34,34 @@ class RequestPath(object):
             self.request.get_full_path = functools.partial(
                 self.get_full_path,
                 self.request,
-                self.only_get_keys
+                self.only_get_keys,
+                True
+            )
+
+        if self.forget_get_keys is not None:
+            # then monkey patch self.request.get_full_path
+            self.request.get_full_path = functools.partial(
+                self.get_full_path,
+                self.request,
+                self.forget_get_keys,
+                False
             )
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.only_get_keys is not None:
+        if self.only_get_keys is not None or self.forget_get_keys is not None:
             self.request.get_full_path = self._prev_get_full_path
 
-    def get_full_path(self, this, only_keys):
+    def get_full_path(self, this, keys, is_only_keys):
         """modified version of django.http.request.Request.get_full_path
         with the ability to return a different query string based on
-        `only_keys`
+        `keys` to be included or excluded
         """
         qs = this.META.get('QUERY_STRING', '')
         parsed = cgi.parse_qs(qs)
-        keep = dict((k, parsed[k]) for k in parsed if k in only_keys)
+        if is_only_keys :
+            keep = dict((k, parsed[k]) for k in parsed if k in keys)
+        else :
+            keep = dict((k, parsed[k]) for k in parsed if k not in keys)
         qs = urllib.urlencode(keep, True)
         return '%s%s' % (this.path, ('?' + iri_to_uri(qs)) if qs else '')
 
@@ -101,7 +116,7 @@ class UpdateCacheMiddleware(object):
                     request
                 )
 
-            with RequestPath(request, self.only_get_keys):
+            with RequestPath(request, self.only_get_keys, self.forget_get_keys):
                 cache_key = learn_cache_key(
                     request,
                     response,
@@ -202,7 +217,7 @@ class FetchFromCacheMiddleware(object):
         else:
             key_prefix = self.key_prefix
 
-        with RequestPath(request, self.only_get_keys):
+        with RequestPath(request, self.only_get_keys, self.forget_get_keys):
             cache_key = get_cache_key(request, key_prefix)
 
         if cache_key is None:
@@ -262,6 +277,9 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         different cache keys when it could be that the `other=junk` parameter
         doesn't change anything.
 
+    :param forget_get_keys:
+        List of query string keys to ignore when reducing the cache key.
+
     :param remember_all_urls:
         With this option you can have all cached URLs stored in cache which
         can make it easy to do things like cache invalidation by URL.
@@ -283,6 +301,7 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
                  post_process_response=None,
                  post_process_response_always=None,
                  only_get_keys=None,
+                 forget_get_keys=None,
                  remember_all_urls=getattr(
                      settings,
                      'FANCY_REMEMBER_ALL_URLS',
@@ -303,5 +322,8 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         if isinstance(only_get_keys, basestring):
             only_get_keys = [only_get_keys]
         self.only_get_keys = only_get_keys
+        if isinstance(forget_get_keys, basestring):
+            forget_get_keys = [forget_get_keys]
+        self.forget_get_keys = forget_get_keys
         self.remember_all_urls = remember_all_urls
         self.remember_stats_all_urls = remember_stats_all_urls
