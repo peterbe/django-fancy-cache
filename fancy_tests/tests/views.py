@@ -49,6 +49,9 @@ def home4(request):
 def home5(request):
     return _view(request)
 
+@cache_page(60, forget_get_keys=['bar'])
+def home5bis(request):
+    return _view(request)
 
 @cache_page(60, remember_stats_all_urls=True, remember_all_urls=True)
 def home6(request):

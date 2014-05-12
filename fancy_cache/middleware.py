@@ -54,7 +54,7 @@ class RequestPath(object):
     def get_full_path(self, this, keys, is_only_keys):
         """modified version of django.http.request.Request.get_full_path
         with the ability to return a different query string based on
-        `only_keys`
+        `keys` to be included or excluded
         """
         qs = this.META.get('QUERY_STRING', '')
         parsed = cgi.parse_qs(qs)
