@@ -124,20 +124,20 @@ class TestViews(unittest.TestCase):
 
     def test_render_home5bis(self):
         request = self.factory.get('/4', {'foo': 'bar'})
-        response = views.home5(request)
+        response = views.home5bis(request)
         eq_(response.status_code, 200)
         ok_(re.findall('Random:\w+', response.content))
         random_string_1 = re.findall('Random:(\w+)', response.content)[0]
 
         request = self.factory.get('/4', {'foo': 'baz'})
-        response = views.home5(request)
+        response = views.home5bis(request)
         eq_(response.status_code, 200)
         ok_(re.findall('Random:\w+', response.content))
         random_string_2 = re.findall('Random:(\w+)', response.content)[0]
         ok_(random_string_1 != random_string_2)
 
         request = self.factory.get('/4', {'foo': 'baz', 'bar': 'foo'})
-        response = views.home5(request)
+        response = views.home5bis(request)
         eq_(response.status_code, 200)
         ok_(re.findall('Random:\w+', response.content))
         random_string_3 = re.findall('Random:(\w+)', response.content)[0]
