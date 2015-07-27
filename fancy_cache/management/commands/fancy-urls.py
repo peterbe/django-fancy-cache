@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 _this_wo_ext = os.path.basename(__file__).rsplit('.', 1)[0]
 
@@ -49,12 +50,12 @@ class Command(BaseCommand):
         for url, cache_key, stats in find_urls(urls, purge=options['purge']):
             _count += 1
             if stats:
-                print url[:70].ljust(65),
-                print "HITS", str(stats['hits']).ljust(5),
-                print "MISSES", str(stats['misses']).ljust(5)
+                print(url[:70].ljust(65),)
+                print("HITS", str(stats['hits']).ljust(5),)
+                print("MISSES", str(stats['misses']).ljust(5))
 
             else:
-                print url
+                print(url)
 
         if verbose:
-            print "-- %s URLs cached --" % _count
+            print("-- %s URLs cached --" % _count)

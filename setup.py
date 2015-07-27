@@ -20,7 +20,7 @@ def read(*parts):
 def find_version(*file_paths):
     version_file = read(*file_paths)
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
+                              version_file.decode("utf8"), re.M)
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
@@ -38,7 +38,7 @@ setup(
 #    long_description=read('README.md') + '\n\n' +
 #                     '\n'.join(read('docs', 'changelog.rst')
 #                                   .splitlines()[1:]),
-    long_description=read('README.md'),
+    long_description=read('README.md').decode("utf8"),
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
     license='BSD',
