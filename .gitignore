@@ -5,3 +5,4 @@ dist/
 django_fancy_cache.egg-info/
 cover/
 docs/_build/
+.tox/

@@ -57,6 +57,6 @@ setup(
     ],
     #install_requires=find_install_requires(),
     tests_require=['nose'],
-    test_suite='fancy_cache.tests',
+    test_suite='runtests.runtests',
     url='http://github.com/peterbe/django-fancy-cache'
 )
