@@ -1,7 +1,11 @@
 django-fancy-cache
 ==================
 
-(c) Peter Bengtsson, mail@peterbe.com, 2013-2014
+(c) Peter Bengtsson, mail@peterbe.com, 2013-2015
+
+[![Build Status](https://travis-ci.org/peterbe/django-fancy-cache.svg?branch=master)](https://travis-ci.org/peterbe/django-fancy-cache)
+
+License: BSD
 
 About django-fancy-cache
 ------------------------
