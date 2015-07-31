@@ -170,10 +170,10 @@ Running the test suite
 
 The simplest way is to simply run:
 
-    $ pip install -r requirements.txt
-    $ fab test
+    $ pip install tox
+    $ tox
 
-Or to run it without `fab` you can simply run:
+Or to run it without `tox` you can simply run:
 
     $ export PYTHONPATH=`pwd`
     $ export DJANGO_SETTINGS_MODULE=fancy_tests.tests.settings
