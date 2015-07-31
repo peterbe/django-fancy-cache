@@ -1,0 +1,17 @@
+language: python
+python:
+- 2.7
+env:
+- TOX_ENV=py27_dj18
+install:
+- pip install tox
+script:
+- tox -e $TOX_ENV
+deploy:
+  provider: pypi
+  user: peterbe
+  password:
+    secure: BVm573If1rHaDOzROUmOsHeVQuY6AXLvrSJWqmBN+oezMYOrrHj5WcDtNM/EMbnJ+x1Zpu1fqd02e+CZLOMymjZwvyOh3INA/bEDiQhtGTF6gZ7IMoJImC1r7vt4LgqCiLi3vvQNP7RVhXk0/NrNHkVpjapqd9K/rgeKYZkHVXI=
+  on:
+    repo: peterbe/django-fancy-cache
+  distributions: "sdist bdist_wheel"
