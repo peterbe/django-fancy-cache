@@ -25,19 +25,11 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-#def find_install_requires():
-#    return [x.strip() for x in
-#            read('requirements.txt').splitlines()
-#            if x.strip() and not x.startswith('#')]
-
 
 setup(
     name='django-fancy-cache',
     version=find_version('fancy_cache/__init__.py'),
     description='clears the junk out of your CSS',
-#    long_description=read('README.md') + '\n\n' +
-#                     '\n'.join(read('docs', 'changelog.rst')
-#                                   .splitlines()[1:]),
     long_description=read('README.md'),
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
@@ -55,8 +47,7 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
-    #install_requires=find_install_requires(),
     tests_require=['nose'],
     test_suite='runtests.runtests',
-    url='http://github.com/peterbe/django-fancy-cache'
+    url='https://github.com/peterbe/django-fancy-cache'
 )
