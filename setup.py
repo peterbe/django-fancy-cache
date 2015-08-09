@@ -14,11 +14,11 @@ from setuptools import setup, find_packages
 
 
 def read(*parts):
-    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read()
+    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read().decode("utf8")
 
 
 def find_version(*file_paths):
-    version_file = read(*file_paths).decode("utf8")
+    version_file = read(*file_paths)
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
     if version_match:
