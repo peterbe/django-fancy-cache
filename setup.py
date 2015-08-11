@@ -29,7 +29,7 @@ def find_version(*file_paths):
 setup(
     name='django-fancy-cache',
     version=find_version('fancy_cache/__init__.py'),
-    description='clears the junk out of your CSS',
+    description="A Django 'cache_page' decorator on steroids",
     long_description=read('README.rst'),
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
