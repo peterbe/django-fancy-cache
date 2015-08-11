@@ -14,7 +14,7 @@ from setuptools import setup, find_packages
 
 
 def read(*parts):
-    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read()
+    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read().decode("utf8")
 
 
 def find_version(*file_paths):
@@ -34,6 +34,7 @@ setup(
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
     license='BSD',
+    install_requires=['six'],
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
@@ -46,6 +47,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
     ],
     tests_require=['nose'],
     test_suite='runtests.runtests',

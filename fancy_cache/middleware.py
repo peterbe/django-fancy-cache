@@ -1,6 +1,5 @@
 import cgi
 import functools
-import urllib
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
@@ -12,6 +11,8 @@ from django.utils.cache import (
     patch_response_headers,
     get_max_age
 )
+from six import string_types, callable
+from six.moves.urllib.parse import urlencode
 
 from fancy_cache.utils import md5
 
@@ -58,11 +59,11 @@ class RequestPath(object):
         """
         qs = this.META.get('QUERY_STRING', '')
         parsed = cgi.parse_qs(qs)
-        if is_only_keys :
+        if is_only_keys:
             keep = dict((k, parsed[k]) for k in parsed if k in keys)
-        else :
+        else:
             keep = dict((k, parsed[k]) for k in parsed if k not in keys)
-        qs = urllib.urlencode(keep, True)
+        qs = urlencode(keep, True)
         return '%s%s' % (this.path, ('?' + iri_to_uri(qs)) if qs else '')
 
 
@@ -187,7 +188,7 @@ class FetchFromCacheMiddleware(object):
                     "before the CacheMiddleware."
                 )
 
-        if not request.method in ('GET', 'HEAD'):
+        if request.method not in ('GET', 'HEAD'):
             request._cache_update_cache = False
             # Don't bother checking the cache.
             return None
@@ -319,10 +320,10 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         self.cache_anonymous_only = cache_anonymous_only
         self.post_process_response = post_process_response
         self.post_process_response_always = post_process_response_always
-        if isinstance(only_get_keys, basestring):
+        if isinstance(only_get_keys, string_types):
             only_get_keys = [only_get_keys]
         self.only_get_keys = only_get_keys
-        if isinstance(forget_get_keys, basestring):
+        if isinstance(forget_get_keys, string_types):
             forget_get_keys = [forget_get_keys]
         self.forget_get_keys = forget_get_keys
         self.remember_all_urls = remember_all_urls
