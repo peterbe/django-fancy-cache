@@ -30,7 +30,7 @@ setup(
     name='django-fancy-cache',
     version=find_version('fancy_cache/__init__.py'),
     description='clears the junk out of your CSS',
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
     license='BSD',
