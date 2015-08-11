@@ -34,6 +34,7 @@ setup(
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
     license='BSD',
+    install_requires=['six'],
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
