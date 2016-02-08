@@ -3,7 +3,7 @@ import functools
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, DEFAULT_CACHE_ALIAS
 from django.utils.encoding import iri_to_uri
 from django.utils.cache import (
     get_cache_key,
@@ -290,30 +290,32 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         of the number of times a `cache_page` hits and misses.
 
     """
-    def __init__(self,
-                 cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
-                 key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
-                 cache_anonymous_only=getattr(
-                     settings,
-                     'CACHE_MIDDLEWARE_ANONYMOUS_ONLY',
-                     False
-                 ),
-                 patch_headers=False,
-                 post_process_response=None,
-                 post_process_response_always=None,
-                 only_get_keys=None,
-                 forget_get_keys=None,
-                 remember_all_urls=getattr(
-                     settings,
-                     'FANCY_REMEMBER_ALL_URLS',
-                     False
-                 ),
-                 remember_stats_all_urls=getattr(
-                     settings,
-                     'FANCY_REMEMBER_STATS_ALL_URLS',
-                     False
-                 ),
-                 ):
+    def __init__(
+        self,
+        cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
+        key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
+        cache_anonymous_only=getattr(
+            settings,
+            'CACHE_MIDDLEWARE_ANONYMOUS_ONLY',
+            False
+        ),
+        patch_headers=False,
+        post_process_response=None,
+        post_process_response_always=None,
+        only_get_keys=None,
+        forget_get_keys=None,
+        remember_all_urls=getattr(
+            settings,
+            'FANCY_REMEMBER_ALL_URLS',
+            False
+        ),
+        remember_stats_all_urls=getattr(
+            settings,
+            'FANCY_REMEMBER_STATS_ALL_URLS',
+            False
+        ),
+        **kwargs
+    ):
         self.patch_headers = patch_headers
         self.cache_timeout = cache_timeout
         self.key_prefix = key_prefix
@@ -328,3 +330,12 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         self.forget_get_keys = forget_get_keys
         self.remember_all_urls = remember_all_urls
         self.remember_stats_all_urls = remember_stats_all_urls
+
+        try:
+            cache_alias = kwargs['cache_alias']
+            if cache_alias is None:
+                cache_alias = DEFAULT_CACHE_ALIAS
+        except KeyError:
+            cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
+
+        self.cache_alias = cache_alias
