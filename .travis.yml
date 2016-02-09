@@ -5,6 +5,8 @@ python:
 env:
 - TOX_ENV=py27_dj18
 - TOX_ENV=py34_dj18
+- TOX_ENV=py27_dj19
+- TOX_ENV=py34_dj19
 install:
 - pip install tox wheel
 script:
