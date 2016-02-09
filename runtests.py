@@ -11,7 +11,6 @@ def runtests():
     sys.path.insert(0, test_dir)
 
     os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-    os.environ['REUSE_DB'] = '0'
     django.setup()
 
     TestRunner = get_runner(settings)
