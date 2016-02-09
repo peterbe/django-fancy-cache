@@ -9,6 +9,9 @@ install:
 - pip install tox wheel
 script:
 - tox -e $TOX_ENV
+branches:
+  only:
+  - master
 deploy:
   provider: pypi
   user: peterbe
