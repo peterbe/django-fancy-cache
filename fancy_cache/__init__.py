@@ -1,2 +1,3 @@
-__version__ = '0.7.2'
-from .cache_page import cache_page
+from .cache_page import cache_page  # NOQA
+
+__version__ = '0.8.0'
