@@ -92,7 +92,7 @@ new comment is posted, the page is immediately refreshed.
 
 As soon as you've implemented something like this and you get
 confident that your ``key_prefix`` callable is good you can start
-increasnig the timeout from one hour to one week or something like
+increasing the timeout from one hour to one week or something like
 that.
 
 Another realistic use case of this is if your logged-in users get
@@ -149,9 +149,9 @@ new comment is added::
         post_pk = instance.post.pk
         post_url = reverse('blog:post', args=(post_pk,))
         list(find_urls([post_url], purge=True))
- 
+
 Note: Since find_urls() returns a generator, the purging won't happen unless you exhaust the generator.
-E.g. looping over it or turning it into a list. 
+E.g. looping over it or turning it into a list.
 
 Voila! As soon as a new comment is added to a post, all cached URLs
 with that URL are purged from the cache.
