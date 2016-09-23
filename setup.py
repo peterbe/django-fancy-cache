@@ -14,8 +14,13 @@ from setuptools import setup, find_packages
 
 
 def read(*parts):
-    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read().decode("utf8")
-
+    content = codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read()
+    try:
+        return content.decode("utf8")
+    except AttributeError:
+        # python 3
+        return content
+    
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
