@@ -56,3 +56,7 @@ def home5bis(request):
 @cache_page(60, remember_stats_all_urls=True, remember_all_urls=True)
 def home6(request):
     return _view(request)
+
+@cache_page(60, cache='second_backend')
+def home7(request):
+    return _view(request)
