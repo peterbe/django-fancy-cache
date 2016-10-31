@@ -2,7 +2,7 @@ import unittest
 import re
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from fancy_cache.memory import find_urls
 
 from . import views
@@ -190,3 +190,18 @@ class TestViews(unittest.TestCase):
         ok_(match[0].startswith('/something/really'))
         eq_(match[2]['hits'], 1)
         eq_(match[2]['misses'], 1)
+
+    def test_cache_backends(self):
+        request = self.factory.get('/anything')
+
+        response = views.home7(request)
+        eq_(response.status_code, 200)
+        ok_(re.findall('Random:\w+', response.content.decode("utf8")))
+        random_string_1 = re.findall('Random:(\w+)', response.content.decode("utf8"))[0]
+
+        # clear second cache backend
+        caches['second_backend'].clear()
+        response = views.home7(request)
+        eq_(response.status_code, 200)
+        random_string_2 = re.findall('Random:(\w+)', response.content.decode("utf8"))[0]
+        ok_(random_string_1 != random_string_2)

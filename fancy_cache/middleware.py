@@ -3,7 +3,7 @@ import functools
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
-from django.core.cache import cache, DEFAULT_CACHE_ALIAS
+from django.core.cache import caches, DEFAULT_CACHE_ALIAS
 from django.utils.encoding import iri_to_uri
 from django.utils.cache import (
     get_cache_key,
@@ -128,7 +128,7 @@ class UpdateCacheMiddleware(object):
                 if self.remember_all_urls:
                     self.remember_url(request, cache_key, timeout)
 
-            cache.set(cache_key, response, timeout)
+            self.cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
             response = self.post_process_response_always(
@@ -140,9 +140,9 @@ class UpdateCacheMiddleware(object):
 
     def remember_url(self, request, cache_key, timeout):
         url = request.get_full_path()
-        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+        remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls[url] = cache_key
-        cache.set(
+        self.cache.set(
             REMEMBERED_URLS_KEY,
             remembered_urls,
             LONG_TIME
@@ -171,9 +171,9 @@ class FetchFromCacheMiddleware(object):
             else:
                 cache_key += '__hits'
             cache_key = md5(cache_key)
-            if cache.get(cache_key) is None:
-                cache.set(cache_key, 0, LONG_TIME)
-            cache.incr(cache_key)
+            if self.cache.get(cache_key) is None:
+                self.cache.set(cache_key, 0, LONG_TIME)
+            self.cache.incr(cache_key)
         return response
 
     def _process_request(self, request):
@@ -226,7 +226,7 @@ class FetchFromCacheMiddleware(object):
             # No cache information available, need to rebuild.
             return None
 
-        response = cache.get(cache_key, None)
+        response = self.cache.get(cache_key, None)
         if response is None:
             request._cache_update_cache = True
             # No cache information available, need to rebuild.
@@ -339,3 +339,4 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
             cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
 
         self.cache_alias = cache_alias
+        self.cache = caches[self.cache_alias]
