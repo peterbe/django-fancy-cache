@@ -1,7 +1,7 @@
 django-fancy-cache
 ==================
 
-Copyright Peter Bengtsson, mail@peterbe.com, 2013-2015
+Copyright Peter Bengtsson, mail@peterbe.com, 2013-2016
 
 |Travis|
 
@@ -182,3 +182,17 @@ Or to run it without ``tox`` you can simply run::
 
 .. |Travis| image:: https://travis-ci.org/peterbe/django-fancy-cache.png?branch=master
    :target: https://travis-ci.org/peterbe/django-fancy-cache
+
+
+Changelog
+---------
+
+(Sorry, been poor in maintaining this. Let's get it right from now)
+
+
+0.8.1
+    * Ability to specify different cache backends to be used
+      https://github.com/peterbe/django-fancy-cache/pull/31
+
+0.8.0
+    * Started keeping a Changelog
