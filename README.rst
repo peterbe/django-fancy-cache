@@ -190,6 +190,9 @@ Changelog
 (Sorry, been poor in maintaining this. Let's get it right from now)
 
 
+0.8.2
+    * Remove deprecated way to define URL patterns and tests in python 3.5
+
 0.8.1
     * Ability to specify different cache backends to be used
       https://github.com/peterbe/django-fancy-cache/pull/31
