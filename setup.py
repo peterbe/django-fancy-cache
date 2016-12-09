@@ -20,7 +20,7 @@ def read(*parts):
     except AttributeError:
         # python 3
         return content
-    
+
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
@@ -50,9 +50,9 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ],
     tests_require=['nose'],
     test_suite='runtests.runtests',

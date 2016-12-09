@@ -1,8 +1,7 @@
-from django.conf.urls import patterns, url
-from . import views
+from django.conf.urls import url
 
 
-urlpatterns = patterns(
-    'fancy-cache',
-    url(r'^$', views.home, name='home'),
-)
+
+urlpatterns = [
+    url(r'^$', 'fancy_cache.views.home', name='home'),
+]
