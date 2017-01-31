@@ -35,27 +35,24 @@ from fancy_cache.memory import find_urls
 class Command(BaseCommand):
     help = __doc__.strip()
 
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '-p', '--purge', dest='purge', action='store_true',
-            help='Purge found URLs'
-        ),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--purge', dest='purge', action='store_true',
+            help='Purge found URLs')
+
     args = 'urls'
 
     def handle(self, *urls, **options):
         verbose = int(options['verbosity']) > 1
-
         _count = 0
         for url, cache_key, stats in find_urls(urls, purge=options['purge']):
             _count += 1
             if stats:
-                print(url[:70].ljust(65)),
-                print("HITS", str(stats['hits']).ljust(5)),
-                print("MISSES", str(stats['misses']).ljust(5))
+                self.stdout.write(url[:70].ljust(65)),
+                self.stdout.write("HITS", str(stats['hits']).ljust(5)),
+                self.stdout.write("MISSES", str(stats['misses']).ljust(5))
 
             else:
-                print(url)
+                self.stdout.write(url)
 
         if verbose:
-            print("-- %s URLs cached --" % _count)
+            self.stdout.write("-- %s URLs cached --" % _count)
