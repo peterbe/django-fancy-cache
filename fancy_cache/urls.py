@@ -1,7 +1,7 @@
 from django.conf.urls import url
-
+from . import views
 
 
 urlpatterns = [
-    url(r'^$', 'fancy_cache.views.home', name='home'),
+    url(r'^$', views.home, name='home'),
 ]
