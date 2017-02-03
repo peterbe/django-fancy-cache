@@ -1,16 +1,14 @@
 sudo: false
 language: python
 python:
-- 2.7
-env:
-- TOX_ENV=py27_dj18
-- TOX_ENV=py34_dj18
-- TOX_ENV=py27_dj19
-- TOX_ENV=py34_dj19
+- "2.7"
+- "3.4"
+- "3.5"
+- "3.6"
 install:
-- pip install tox wheel
+- pip install tox-travis wheel
 script:
-- tox -e $TOX_ENV
+- tox
 branches:
   only:
   - master
