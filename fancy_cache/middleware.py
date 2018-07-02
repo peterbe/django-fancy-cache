@@ -58,7 +58,7 @@ class RequestPath(object):
         `keys` to be included or excluded
         """
         qs = this.META.get('QUERY_STRING', '')
-        parsed = cgi.parse_qs(qs)
+        parsed = cgi.parse_qs(qs, keep_blank_values=True)
         if is_only_keys:
             keep = dict((k, parsed[k]) for k in parsed if k in keys)
         else:
