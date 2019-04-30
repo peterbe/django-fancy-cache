@@ -12,7 +12,10 @@ from django.utils.cache import (
 )
 from six import string_types, callable
 from six.moves.urllib.parse import urlencode
-from urlparse import parse_qs
+try:
+    from urllib.parse import parse_qs
+except ImportError:
+    from urlparse import parse_qs
 
 from fancy_cache.utils import md5
 
