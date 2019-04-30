@@ -1,4 +1,3 @@
-import cgi
 import functools
 
 from django.core.exceptions import ImproperlyConfigured
@@ -13,6 +12,7 @@ from django.utils.cache import (
 )
 from six import string_types, callable
 from six.moves.urllib.parse import urlencode
+from urlparse import parse_qs
 
 from fancy_cache.utils import md5
 
@@ -58,7 +58,7 @@ class RequestPath(object):
         `keys` to be included or excluded
         """
         qs = this.META.get('QUERY_STRING', '')
-        parsed = cgi.parse_qs(qs, keep_blank_values=True)
+        parsed = parse_qs(qs, keep_blank_values=True)
         if is_only_keys:
             keep = dict((k, parsed[k]) for k in parsed if k in keys)
         else:
