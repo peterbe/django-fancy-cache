@@ -189,6 +189,14 @@ Changelog
 
 (Sorry, been poor in maintaining this. Let's get it right from now)
 
+0.11.0
+    * Fix for ``parse_qs`` correctly between Python 2 and Python 3
+
+0.10.0
+    * Fix for keeping blank strings in query strings. #39
+
+0.9.0
+    * Django 1.10 support
 
 0.8.2
     * Remove deprecated way to define URL patterns and tests in python 3.5
