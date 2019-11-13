@@ -190,7 +190,7 @@ Changelog
 (Sorry, been poor in maintaining this. Let's get it right from now)
 
 1.0.0
-    * Drop support for Python 2 and Django <2.2.0
+    * Drop support for Python <3.5 and Django <2.2.0
 
 0.11.0
     * Fix for ``parse_qs`` correctly between Python 2 and Python 3
