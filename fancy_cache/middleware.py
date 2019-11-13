@@ -10,12 +10,7 @@ from django.utils.cache import (
     patch_response_headers,
     get_max_age
 )
-from six import string_types, callable
-from six.moves.urllib.parse import urlencode
-try:
-    from urllib.parse import parse_qs
-except ImportError:
-    from urlparse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
 from fancy_cache.utils import md5
 
@@ -325,10 +320,10 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         self.cache_anonymous_only = cache_anonymous_only
         self.post_process_response = post_process_response
         self.post_process_response_always = post_process_response_always
-        if isinstance(only_get_keys, string_types):
+        if isinstance(only_get_keys, str):
             only_get_keys = [only_get_keys]
         self.only_get_keys = only_get_keys
-        if isinstance(forget_get_keys, string_types):
+        if isinstance(forget_get_keys, str):
             forget_get_keys = [forget_get_keys]
         self.forget_get_keys = forget_get_keys
         self.remember_all_urls = remember_all_urls

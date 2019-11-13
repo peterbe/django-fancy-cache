@@ -3,7 +3,7 @@ from nose.tools import eq_, ok_
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import TestCase
-from django.utils.six import StringIO
+from io import StringIO
 from fancy_cache.middleware import REMEMBERED_URLS_KEY
 
 
