@@ -13,7 +13,7 @@ About django-fancy-cache
 A Django ``cache_page`` decorator on steroids.
 
 Unlike the stock ``django.views.decorators.cache.change_page`` this
-decorator makes it possible to set a ``key_prefixer`` that is a
+decorator makes it possible to set a ``key_prefix`` that is a
 callable. This callable is passed the request and if it returns ``None``
 the page is not cached.
 
@@ -46,7 +46,7 @@ In your Django views:
             return None
         return 'myprefix'
 
-    @cache_page(60 * 60, key_prefixer=prefixer)
+    @cache_page(60 * 60, key_prefix=prefixer)
     def myotherview(request):
         return render(request, 'page2.html')
 
@@ -54,9 +54,10 @@ In your Django views:
         response.content += '<!-- this was post processed -->'
         return response
 
-    @cache_page(60 * 60,
-                key_prefixer=prefixer,
-            post_process_response=post_processor)
+    @cache_page(
+        60 * 60,
+        key_prefix=prefixer,
+        post_process_response=post_processor)
     def yetanotherotherview(request):
         return render(request, 'page3.html')
 
