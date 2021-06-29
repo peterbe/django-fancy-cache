@@ -1,4 +1,5 @@
 import functools
+import logging
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
@@ -14,6 +15,7 @@ from urllib.parse import parse_qs, urlencode
 
 from fancy_cache.utils import md5
 
+LOGGER = logging.getLogger(__name__)
 
 REMEMBERED_URLS_KEY = "fancy-urls"
 LONG_TIME = 60 * 60 * 24 * 30
@@ -122,10 +124,90 @@ class UpdateCacheMiddleware(object):
         return response
 
     def remember_url(self, request, cache_key, timeout):
+        """
+        Function to remember a newly cached URL.
+
+        All cached URLs are remembered in a dictionary
+        in the cache under REMEMBERED_URLS_KEY.
+
+        For most backends including Redis, self.cache.set will
+        successfully set the dictionary atomically in a thread-safe manner.
+
+        For Memcached, we try to use CAS (check and set) to set
+        the dictionary via self.cache._cache.cas to avoid missing
+        cached URLs in high traffic environments.cache._cache.cas.
+
+        See Issue #7 for more information:
+        https://github.com/peterbe/django-fancy-cache/issues/7
+        """
         url = request.get_full_path()
+        try:
+            result = self.remember_url_cas(url, cache_key)
+            if result:
+                # Remembered URLs have been successfully saved
+                # via Memcached CAS.
+                return
+        except AttributeError as exc:
+            # This is not PyLibMC Memcached and/or
+            # Memcached CAS ("check and set") is not available.
+            # Methods self.cache._cache.gets or
+            # self.cache._cache.cas do not exist.
+            # Use self.cache.set to set remembered_urls
+            pass
+        except ValueError as exc:
+            # Memcached CAS has not been enabled in the CACHES setting.
+            # Swallow the exception and fall back to
+            # the default UpdateCacheMiddleware.remember_url functionality
+            # that uses self.cache.set.
+            LOGGER.warning(
+                "Memcached CAS has not been enabled in the CACHES setting: %s",
+                exc
+            )
+        except Exception as exc:
+            # Memcached-wrapper-specific exceptions like pylibmc.NotFound.
+            # Memcached CAS will not work for some reason.
+            # Swallow the exception and fall back to
+            # the default UpdateCacheMiddleware.remember_url functionality
+            # that uses self.cache.set.
+            # See issue #7 for more information:
+            # https://github.com/peterbe/django-fancy-cache/issues/7
+            LOGGER.warning("Error in Memcached CAS (check and set): %s", exc)
+
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls[url] = cache_key
         self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+
+    def remember_url_cas(self, url, cache_key):
+        """
+        Helper function to use Memcached CAS to store remembered URLs.
+        This addresses race conditions when using Memcached.
+        See Issue #7: https://github.com/peterbe/django-fancy-cache/issues/7.
+        """
+        result = False
+        tries = 0  # Make sure an unexpected error doesn't cause a loop
+        while result is False and tries <= 100:
+            remembered_urls, cas_token = self.cache._cache.gets(
+                REMEMBERED_URLS_KEY
+            )
+
+            if remembered_urls is None:
+                # No cache entry; set the cache using `cache.set`.
+                return False
+
+            remembered_urls[url] = cache_key
+            result = self.cache._cache.cas(
+                REMEMBERED_URLS_KEY,
+                remembered_urls,
+                cas_token,
+                LONG_TIME
+            )
+            tries += 1
+        if result is False:
+            LOGGER.error(
+                "Django-fancy-cache failed to save using CAS after %s tries.",
+                tries
+            )
+        return result
 
 
 class FetchFromCacheMiddleware(object):
