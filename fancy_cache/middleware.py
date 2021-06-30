@@ -290,6 +290,7 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
     """
     def __init__(
         self,
+        *args,
         cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
         key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
         cache_anonymous_only=getattr(
