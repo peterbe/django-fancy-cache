@@ -34,6 +34,8 @@ In your Django views:
 .. code:: python
 
     from fancy_cache import cache_page
+    from django.utils.decorators import method_decorator
+    from django.views.generic import TemplateView
 
     @cache_page(60 * 60)
     def myview(request):
@@ -60,6 +62,14 @@ In your Django views:
         post_process_response=post_processor)
     def yetanotherotherview(request):
         return render(request, 'page3.html')
+
+
+    class MyClassBasedView(TemplateView):
+        template_name = 'page4.html'
+
+        @method_decorator(cache_page(60*60))
+        def get(self, request, *args, **kwargs):
+            return super().get(request, *args, **kwargs)
 
 Optional uses
 -------------
