@@ -32,6 +32,21 @@ What you add is this::
 	return render(request, 'template.html')
 
 
+Fancy cache also works for Class-based Views with the help of [Django's `method_decorator`](https://docs.djangoproject.com/en/dev/topics/class-based-views/intro/#decorating-the-class)::
+
+    from django.utils.decorators import method_decorator
+    from django.views.generic import TemplateView
+    from fancy_cache import cache_page
+
+
+    class MyView(TemplateView):
+        template_name = "template.html"
+
+        @method_decorator(cache_page(3600))
+        def get(self, request, *args, **kwargs):
+            return super().get(request, *args, **kwargs)
+
+
 Getting fancy
 -------------
 
