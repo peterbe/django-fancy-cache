@@ -78,6 +78,9 @@ If you want to you can have ``django-fancy-cache`` record every URL it
 caches. This can be useful for things like invalidation or curious
 statistical inspection.
 
+  
+
+
 You can either switch this on on the decorator itself. Like this:
 
 .. code:: python
@@ -117,6 +120,24 @@ option like this:
 Note: Since ``find_urls()`` returns a generator, the purging won't
 happen unless you exhaust the generator. E.g. looping over it or
 turning it into a list.
+
+> :warning: **If you are using Memcached, you must 
+> enable check-and-set to remember all urls**:
+
+.. code:: python
+   CACHES = {
+       'default': {
+           'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+           'LOCATION': '127.0.0.1:11211',
+           # This OPTIONS setting enables Memcached check-and-set which is
+           # required for remember_all_urls or FANCY_REMEMBER_ALL_URLS.
+           'OPTIONS': {  
+               'behaviors': {
+                   'cas': True
+               }
+           }
+       }
+    }
 
 The second way to inspect all recorded URLs is to use the
 ``fancy-cache`` management command. This is only available if you have
