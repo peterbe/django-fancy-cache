@@ -78,9 +78,6 @@ If you want to you can have ``django-fancy-cache`` record every URL it
 caches. This can be useful for things like invalidation or curious
 statistical inspection.
 
-  
-
-
 You can either switch this on on the decorator itself. Like this:
 
 .. code:: python

@@ -171,7 +171,6 @@ E.g. looping over it or turning it into a list.
         }
     }
 
-
 Voila! As soon as a new comment is added to a post, all cached URLs
 with that URL are purged from the cache.
 
