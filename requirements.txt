@@ -1,5 +1,4 @@
 # Tests
-black==21.9b0
 mock>=0.8.0
 Django>=1.4.3
 django-nose
