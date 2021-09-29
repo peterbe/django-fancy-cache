@@ -123,6 +123,18 @@ class UpdateCacheMiddleware(object):
 
         return response
 
+    def _is_memcached_backend_with_check_and_set(self):
+        """
+        Helper function that returns True if the backend is Memcached
+        and the check-and-set API is available.
+
+        Returns False otherwise.
+        """
+        return (
+            hasattr(self.cache._cache, "cas") and
+            hasattr(self.cache._cache, "gets")
+        )
+
     def remember_url(self, request, cache_key, timeout):
         """
         Function to remember a newly cached URL.
