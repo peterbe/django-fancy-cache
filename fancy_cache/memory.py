@@ -5,7 +5,7 @@ from django.core.cache import cache
 from fancy_cache.middleware import REMEMBERED_URLS_KEY, LONG_TIME
 from fancy_cache.utils import md5
 
-__all__ = ('find_urls',)
+__all__ = ("find_urls",)
 
 
 def _match(url, regexes):
@@ -20,12 +20,12 @@ def _match(url, regexes):
 def _urls_to_regexes(urls):
     regexes = []
     for each in urls:
-        parts = each.split('*')
+        parts = each.split("*")
         if len(parts) == 1:
-            regexes.append(re.compile('^%s$' % re.escape(parts[0])))
+            regexes.append(re.compile("^%s$" % re.escape(parts[0])))
         else:
-            _re = '.*'.join(re.escape(x) for x in parts)
-            regexes.append(re.compile('^%s$' % _re))
+            _re = ".*".join(re.escape(x) for x in parts)
+            regexes.append(re.compile("^%s$" % _re))
     return regexes
 
 
@@ -42,9 +42,9 @@ def find_urls(urls=None, purge=False):
             if purge:
                 cache.delete(cache_key)
                 _del_keys.append(url)
-            misses_cache_key = '%s__misses' % url
+            misses_cache_key = "%s__misses" % url
             misses_cache_key = md5(misses_cache_key)
-            hits_cache_key = '%s__hits' % url
+            hits_cache_key = "%s__hits" % url
             hits_cache_key = md5(hits_cache_key)
 
             misses = cache.get(misses_cache_key)
@@ -52,23 +52,16 @@ def find_urls(urls=None, purge=False):
             if misses is None and hits is None:
                 stats = None
             else:
-                stats = {
-                    'hits': hits or 0,
-                    'misses': misses or 0
-                }
+                stats = {"hits": hits or 0, "misses": misses or 0}
             yield (url, cache_key, stats)
 
     if _del_keys:
         # means something was changed
         for url in _del_keys:
             remembered_urls.pop(url)
-            misses_cache_key = '%s__misses' % url
-            hits_cache_key = '%s__hits' % url
+            misses_cache_key = "%s__misses" % url
+            hits_cache_key = "%s__hits" % url
             cache.delete(misses_cache_key)
             cache.delete(hits_cache_key)
 
-        cache.set(
-            REMEMBERED_URLS_KEY,
-            remembered_urls,
-            LONG_TIME
-        )
+        cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
