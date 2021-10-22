@@ -9,23 +9,27 @@ from fabric.api import local
 
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
-os.environ['PYTHONPATH'] = ROOT
+os.environ["PYTHONPATH"] = ROOT
 
 
 def _test(extra_args):
     """Run test suite."""
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'fancy_tests.tests.settings'
-    os.environ['REUSE_DB'] = '0'
+    os.environ["DJANGO_SETTINGS_MODULE"] = "fancy_tests.tests.settings"
+    os.environ["REUSE_DB"] = "0"
 
     # Add tables and flush DB
-    local('django-admin.py syncdb --noinput')
-    local('django-admin.py flush --noinput')
+    local("django-admin.py syncdb --noinput")
+    local("django-admin.py flush --noinput")
 
-    local('django-admin.py test %s' % extra_args)
+    local("django-admin.py test %s" % extra_args)
+
 
 def test():
-    _test('-s')
+    _test("-s")
+
 
 def coverage():
-    _test('-s --with-coverage --cover-erase --cover-html '
-          '--cover-package=fancy_cache')
+    _test(
+        "-s --with-coverage --cover-erase --cover-html "
+        "--cover-package=fancy_cache"
+    )

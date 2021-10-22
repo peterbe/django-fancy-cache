@@ -3,7 +3,7 @@ import os
 import sys
 
 # make sure we're running the fancy_cache here and not anything installed
-parent = os.path.normpath(os.path.join(__file__, '../..'))
+parent = os.path.normpath(os.path.join(__file__, "../.."))
 sys.path.insert(0, parent)
 
 if __name__ == "__main__":

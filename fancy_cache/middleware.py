@@ -8,14 +8,14 @@ from django.utils.cache import (
     get_cache_key,
     learn_cache_key,
     patch_response_headers,
-    get_max_age
+    get_max_age,
 )
 from urllib.parse import parse_qs, urlencode
 
 from fancy_cache.utils import md5
 
 
-REMEMBERED_URLS_KEY = 'fancy-urls'
+REMEMBERED_URLS_KEY = "fancy-urls"
 LONG_TIME = 60 * 60 * 24 * 30
 
 
@@ -31,19 +31,13 @@ class RequestPath(object):
         if self.only_get_keys is not None:
             # then monkey patch self.request.get_full_path
             self.request.get_full_path = functools.partial(
-                self.get_full_path,
-                self.request,
-                self.only_get_keys,
-                True
+                self.get_full_path, self.request, self.only_get_keys, True
             )
 
         if self.forget_get_keys is not None:
             # then monkey patch self.request.get_full_path
             self.request.get_full_path = functools.partial(
-                self.get_full_path,
-                self.request,
-                self.forget_get_keys,
-                False
+                self.get_full_path, self.request, self.forget_get_keys, False
             )
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -55,14 +49,14 @@ class RequestPath(object):
         with the ability to return a different query string based on
         `keys` to be included or excluded
         """
-        qs = this.META.get('QUERY_STRING', '')
+        qs = this.META.get("QUERY_STRING", "")
         parsed = parse_qs(qs, keep_blank_values=True)
         if is_only_keys:
             keep = dict((k, parsed[k]) for k in parsed if k in keys)
         else:
             keep = dict((k, parsed[k]) for k in parsed if k not in keys)
         qs = urlencode(keep, True)
-        return '%s%s' % (this.path, ('?' + iri_to_uri(qs)) if qs else '')
+        return "%s%s" % (this.path, ("?" + iri_to_uri(qs)) if qs else "")
 
 
 class UpdateCacheMiddleware(object):
@@ -78,12 +72,12 @@ class UpdateCacheMiddleware(object):
     def process_response(self, request, response):
         """Sets the cache, if needed."""
         if (
-            not hasattr(request, '_cache_update_cache') or
-            not request._cache_update_cache
+            not hasattr(request, "_cache_update_cache")
+            or not request._cache_update_cache
         ):
             # We don't need to update the cache, just return.
             return response
-        if request.method != 'GET':
+        if request.method != "GET":
             # This is a stronger requirement than above. It is needed
             # because of interactions between this middleware and the
             # HTTPMiddleware, which throws the body of a HEAD-request
@@ -110,17 +104,11 @@ class UpdateCacheMiddleware(object):
             else:
                 key_prefix = self.key_prefix
             if self.post_process_response:
-                response = self.post_process_response(
-                    response,
-                    request
-                )
+                response = self.post_process_response(response, request)
 
             with RequestPath(request, self.only_get_keys, self.forget_get_keys):
                 cache_key = learn_cache_key(
-                    request,
-                    response,
-                    timeout,
-                    key_prefix
+                    request, response, timeout, key_prefix
                 )
 
                 if self.remember_all_urls:
@@ -129,10 +117,7 @@ class UpdateCacheMiddleware(object):
             self.cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
-            response = self.post_process_response_always(
-                response,
-                request
-            )
+            response = self.post_process_response_always(response, request)
 
         return response
 
@@ -140,11 +125,7 @@ class UpdateCacheMiddleware(object):
         url = request.get_full_path()
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls[url] = cache_key
-        self.cache.set(
-            REMEMBERED_URLS_KEY,
-            remembered_urls,
-            LONG_TIME
-        )
+        self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
 
 
 class FetchFromCacheMiddleware(object):
@@ -155,6 +136,7 @@ class FetchFromCacheMiddleware(object):
     FetchFromCacheMiddleware must be the last piece of middleware in
     MIDDLEWARE_CLASSES so that it'll get called last during the request phase.
     """
+
     def process_request(self, request):
         """
         Checks whether the page is already cached and returns the cached
@@ -165,9 +147,9 @@ class FetchFromCacheMiddleware(object):
             # then we're nosy
             cache_key = request.get_full_path()
             if response is None:
-                cache_key += '__misses'
+                cache_key += "__misses"
             else:
-                cache_key += '__hits'
+                cache_key += "__hits"
             cache_key = md5(cache_key)
             if self.cache.get(cache_key) is None:
                 self.cache.set(cache_key, 0, LONG_TIME)
@@ -176,7 +158,7 @@ class FetchFromCacheMiddleware(object):
 
     def _process_request(self, request):
         if self.cache_anonymous_only:
-            if not hasattr(request, 'user'):
+            if not hasattr(request, "user"):
                 raise ImproperlyConfigured(
                     "The Django cache middleware with "
                     "CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires "
@@ -186,16 +168,16 @@ class FetchFromCacheMiddleware(object):
                     "before the CacheMiddleware."
                 )
 
-        if request.method not in ('GET', 'HEAD'):
+        if request.method not in ("GET", "HEAD"):
             request._cache_update_cache = False
             # Don't bother checking the cache.
             return None
 
-        #if (
+        # if (
         #    request.GET and
         #    not callable(self.key_prefix) and
         #    not self.only_get_keys
-        #):
+        # ):
         #    request._cache_update_cache = False
         #    # Default behaviour for requests with GET parameters: don't bother
         #    # checking the cache.
@@ -233,8 +215,7 @@ class FetchFromCacheMiddleware(object):
         request._cache_update_cache = False
         if self.post_process_response_always:
             response = self.post_process_response_always(
-                response,
-                request=request
+                response, request=request
             )
 
         return response
@@ -288,30 +269,23 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         of the number of times a `cache_page` hits and misses.
 
     """
+
     def __init__(
         self,
         *args,
         cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
         key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
         cache_anonymous_only=getattr(
-            settings,
-            'CACHE_MIDDLEWARE_ANONYMOUS_ONLY',
-            False
+            settings, "CACHE_MIDDLEWARE_ANONYMOUS_ONLY", False
         ),
         patch_headers=False,
         post_process_response=None,
         post_process_response_always=None,
         only_get_keys=None,
         forget_get_keys=None,
-        remember_all_urls=getattr(
-            settings,
-            'FANCY_REMEMBER_ALL_URLS',
-            False
-        ),
+        remember_all_urls=getattr(settings, "FANCY_REMEMBER_ALL_URLS", False),
         remember_stats_all_urls=getattr(
-            settings,
-            'FANCY_REMEMBER_STATS_ALL_URLS',
-            False
+            settings, "FANCY_REMEMBER_STATS_ALL_URLS", False
         ),
         **kwargs
     ):
@@ -331,7 +305,7 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         self.remember_stats_all_urls = remember_stats_all_urls
 
         try:
-            cache_alias = kwargs['cache_alias']
+            cache_alias = kwargs["cache_alias"]
             if cache_alias is None:
                 cache_alias = DEFAULT_CACHE_ALIAS
         except KeyError:
