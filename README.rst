@@ -1,7 +1,7 @@
 django-fancy-cache
 ==================
 
-Copyright Peter Bengtsson, mail@peterbe.com, 2013-2016
+Copyright Peter Bengtsson, mail@peterbe.com, 2013-2022
 
 |Travis|
 
@@ -226,8 +226,8 @@ Changelog
 
 1.1.0
     * If you use Memcached you can set
-  ``settings.FANCY_USE_MEMCACHED_CHECK_AND_SET = True`` so that you
-   can use ``cache._cache.cas`` which only workd with Memcached.
+      ``settings.FANCY_USE_MEMCACHED_CHECK_AND_SET = True`` so that you
+      can use ``cache._cache.cas`` which only workd with Memcached.
 
 1.0.0
     * Drop support for Python <3.5 and Django <2.2.0
