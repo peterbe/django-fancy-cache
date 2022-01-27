@@ -127,6 +127,7 @@ turning it into a list.
     # in settings.py
  
     FANCY_USE_MEMCACHED_CHECK_AND_SET = True
+
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',

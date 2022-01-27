@@ -135,11 +135,8 @@ class UpdateCacheMiddleware(object):
         All cached URLs are remembered in a dictionary
         in the cache under REMEMBERED_URLS_KEY.
 
-        For most backends including Redis, self.cache.set will
-        successfully set the dictionary atomically in a thread-safe manner.
-
-        For Memcached, we try to use CAS (check and set) to set
-        the dictionary via self.cache._cache.cas to avoid missing
+        If USE_MEMCACHED_CAS is True, we try to use CAS (check and set)
+        to set the dictionary via self.cache._cache.cas to avoid missing
         cached URLs in high traffic environments.cache._cache.cas.
 
         See Issue #7 for more information:
@@ -155,6 +152,7 @@ class UpdateCacheMiddleware(object):
                 # Remembered URLs have been successfully saved
                 # via Memcached CAS.
                 return
+
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls[url] = cache_key
         self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
