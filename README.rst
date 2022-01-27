@@ -3,8 +3,6 @@ django-fancy-cache
 
 Copyright Peter Bengtsson, mail@peterbe.com, 2013-2022
 
-|Travis|
-
 License: BSD
 
 About django-fancy-cache
@@ -118,12 +116,12 @@ Note: Since ``find_urls()`` returns a generator, the purging won't
 happen unless you exhaust the generator. E.g. looping over it or
 turning it into a list.
 
-> :warning: **If you are using Memcached, you must
-> enable check-and-set to remember all urls**
-> by enabling the `FANCY_USE_MEMCACHED_CHECK_AND_SET`
-> flag and enabling `cas` in your `CACHES` settings:
+**If you are using Memcached**, you must enable check-and-set to
+remember all urls by enabling the ``FANCY_USE_MEMCACHED_CHECK_AND_SET``
+flag and enabling ``cas`` in your ``CACHES`` settings:
 
-.. :: python
+.. code:: python
+
     # in settings.py
 
     FANCY_USE_MEMCACHED_CHECK_AND_SET = True
@@ -160,7 +158,7 @@ applicable).
 The third way to inspect the recorded URLs is to add this to your root
 ``urls.py``:
 
-.. :: python
+.. code:: python
 
     url(r'fancy-cache', include('fancy_cache.urls')),
 
@@ -184,7 +182,7 @@ starts over.
 You can see the stats whenever you use any of the ways described in
 the section above. For example like this:
 
-.. :: python
+.. code:: python
 
     >>> from fancy_cache.memory import find_urls
     >>> found = list(find_urls([]))[0]
@@ -213,10 +211,6 @@ Or to run it without ``tox`` you can simply run::
     $ export PYTHONPATH=`pwd`
     $ export DJANGO_SETTINGS_MODULE=fancy_tests.tests.settings
     $ django-admin.py test
-
-
-.. |Travis| image:: https://travis-ci.org/peterbe/django-fancy-cache.png?branch=master
-   :target: https://travis-ci.org/peterbe/django-fancy-cache
 
 
 Changelog
