@@ -1,6 +1,7 @@
 # Based on
 # https://pypi.org/project/tox-gh-actions/
 
+---
 name: Python
 
 on: [push, pull_request]
@@ -10,9 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "pypy3"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "pypy3"]
 
     steps:
+      - name: apt update
+        run: sudo apt update
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
