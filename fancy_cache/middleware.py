@@ -19,6 +19,11 @@ LOGGER = logging.getLogger(__name__)
 
 REMEMBERED_URLS_KEY = "fancy-urls"
 LONG_TIME = 60 * 60 * 24 * 30
+USE_MEMCACHED_CAS = getattr(
+    settings,
+    "FANCY_USE_MEMCACHED_CHECK_AND_SET",
+    False
+)
 
 
 class RequestPath(object):
@@ -141,7 +146,7 @@ class UpdateCacheMiddleware(object):
         https://github.com/peterbe/django-fancy-cache/issues/7
         """
         url = request.get_full_path()
-        if settings.FANCY_USE_MEMCACHED_CHECK_AND_SET is True:
+        if USE_MEMCACHED_CAS is True:
             # Memcached check-and-set is available.
             # Try using check-and-set to avoid a race condition
             # in remembering urls; if this fails, fallback to cache.set.
