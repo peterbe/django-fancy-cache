@@ -123,18 +123,6 @@ class UpdateCacheMiddleware(object):
 
         return response
 
-    def _is_memcached_backend_with_check_and_set(self):
-        """
-        Helper function that returns True if the backend is Memcached
-        and the check-and-set API is available.
-
-        Returns False otherwise.
-        """
-        return (
-            hasattr(self.cache._cache, "cas") and
-            hasattr(self.cache._cache, "gets")
-        )
-
     def remember_url(self, request, cache_key, timeout):
         """
         Function to remember a newly cached URL.
@@ -153,11 +141,11 @@ class UpdateCacheMiddleware(object):
         https://github.com/peterbe/django-fancy-cache/issues/7
         """
         url = request.get_full_path()
-        if self._is_memcached_backend_with_check_and_set():
+        if settings.FANCY_USE_MEMCACHED_CHECK_AND_SET is True:
             # Memcached check-and-set is available.
             # Try using check-and-set to avoid a race condition
             # in remembering urls; if this fails, fallback to cache.set.
-            result = self.remember_url_cas(url, cache_key)
+            result = self._remember_url_cas(url, cache_key)
             if result:
                 # Remembered URLs have been successfully saved
                 # via Memcached CAS.

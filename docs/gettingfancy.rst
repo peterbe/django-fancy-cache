@@ -154,9 +154,14 @@ Note: Since find_urls() returns a generator, the purging won't happen unless you
 E.g. looping over it or turning it into a list.
 
 > :warning: **If you are using Memcached, you must 
-> enable check-and-set to remember all urls**:
+> enable check-and-set to remember all urls**
+> by enabling the `FANCY_USE_MEMCACHED_CHECK_AND_SET`
+> flag and enabling `cas` in your `CACHES` settings:
 
     # in settings.py
+
+    FANCY_USE_MEMCACHED_CHECK_AND_SET = True
+
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
