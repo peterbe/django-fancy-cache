@@ -153,6 +153,29 @@ new comment is added::
 Note: Since find_urls() returns a generator, the purging won't happen unless you exhaust the generator.
 E.g. looping over it or turning it into a list.
 
+> :warning: **If you are using Memcached, you must 
+> enable check-and-set to remember all urls**
+> by enabling the `FANCY_USE_MEMCACHED_CHECK_AND_SET`
+> flag and enabling `cas` in your `CACHES` settings:
+
+    # in settings.py
+
+    FANCY_USE_MEMCACHED_CHECK_AND_SET = True
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+            'LOCATION': '127.0.0.1:11211',
+            # This OPTIONS setting enables Memcached check-and-set which is
+            # required for remember_all_urls or FANCY_REMEMBER_ALL_URLS.
+            'OPTIONS': {  
+                'behaviors': {
+                    'cas': True
+                }
+            }
+        }
+    }
+
 Voila! As soon as a new comment is added to a post, all cached URLs
 with that URL are purged from the cache.
 
