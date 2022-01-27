@@ -123,7 +123,7 @@ turning it into a list.
 > by enabling the `FANCY_USE_MEMCACHED_CHECK_AND_SET`
 > flag and enabling `cas` in your `CACHES` settings:
 
-.. code:: python
+.. :: python
     # in settings.py
 
     FANCY_USE_MEMCACHED_CHECK_AND_SET = True
@@ -160,7 +160,7 @@ applicable).
 The third way to inspect the recorded URLs is to add this to your root
 ``urls.py``:
 
-.. code:: python
+.. :: python
 
     url(r'fancy-cache', include('fancy_cache.urls')),
 
@@ -184,7 +184,7 @@ starts over.
 You can see the stats whenever you use any of the ways described in
 the section above. For example like this:
 
-.. code:: python
+.. :: python
 
     >>> from fancy_cache.memory import find_urls
     >>> found = list(find_urls([]))[0]
