@@ -1,0 +1,2 @@
+REMEMBERED_URLS_KEY = "fancy-urls"
+LONG_TIME = 60 * 60 * 24 * 30

@@ -13,16 +13,13 @@ from django.utils.cache import (
 )
 from urllib.parse import parse_qs, urlencode
 
-from fancy_cache.utils import md5
+from fancy_cache.constants import LONG_TIME
+from fancy_cache.utils import md5, get_fancy_cache_keys_and_duration
 
 LOGGER = logging.getLogger(__name__)
 
-REMEMBERED_URLS_KEY = "fancy-urls"
-LONG_TIME = 60 * 60 * 24 * 30
 USE_MEMCACHED_CAS = getattr(
-    settings,
-    "FANCY_USE_MEMCACHED_CHECK_AND_SET",
-    False
+    settings, "FANCY_USE_MEMCACHED_CHECK_AND_SET", False
 )
 
 
@@ -119,7 +116,7 @@ class UpdateCacheMiddleware(object):
                 )
 
                 if self.remember_all_urls:
-                    self.remember_url(request, cache_key, timeout)
+                    self.remember_url(request, cache_key)
 
             self.cache.set(cache_key, response, timeout)
 
@@ -128,7 +125,7 @@ class UpdateCacheMiddleware(object):
 
         return response
 
-    def remember_url(self, request, cache_key, timeout):
+    def remember_url(self, request, cache_key):
         """
         Function to remember a newly cached URL.
 
@@ -153,11 +150,13 @@ class UpdateCacheMiddleware(object):
                 # via Memcached CAS.
                 return
 
-        remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
+        fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
+        fancy_cache_key = fancy_cache_keys.pop()
+        remembered_urls = self.cache.get(fancy_cache_key, {})
         remembered_urls[url] = cache_key
-        self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+        self.cache.set(fancy_cache_key, remembered_urls, duration)
 
-    def _remember_url_cas(self, url, cache_key):
+    def _remember_url_cas(self, url: str, cache_key: str) -> bool:
         """
         Helper function to use Memcached CAS to store remembered URLs.
         This addresses race conditions when using Memcached.
@@ -165,10 +164,10 @@ class UpdateCacheMiddleware(object):
         """
         result = False
         tries = 0  # Make sure an unexpected error doesn't cause a loop
+        fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
+        fancy_cache_key = fancy_cache_keys.pop()
         while result is False and tries <= 100:
-            remembered_urls, cas_token = self.cache._cache.gets(
-                REMEMBERED_URLS_KEY
-            )
+            remembered_urls, cas_token = self.cache._cache.gets(fancy_cache_key)
 
             if remembered_urls is None:
                 # No cache entry; set the cache using `cache.set`.
@@ -177,7 +176,7 @@ class UpdateCacheMiddleware(object):
             remembered_urls[url] = cache_key
 
             result = self.cache._cache.cas(
-                REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
+                fancy_cache_key, remembered_urls, cas_token, duration
             )
 
             tries += 1

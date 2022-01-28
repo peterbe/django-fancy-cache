@@ -5,17 +5,16 @@ import typing
 from django.core.cache import cache
 
 from fancy_cache.middleware import (
-    REMEMBERED_URLS_KEY,
-    LONG_TIME,
     USE_MEMCACHED_CAS,
 )
-from fancy_cache.utils import md5
+from fancy_cache.utils import md5, get_fancy_cache_keys_and_duration
 
 __all__ = ("find_urls",)
 
 LOGGER = logging.getLogger(__name__)
 
-def _match(url, regexes):
+
+def _match(url: str, regexes: typing.List[typing.Pattern[str]]):
     if not regexes:
         return url
     for regex in regexes:
@@ -24,7 +23,9 @@ def _match(url, regexes):
     return False
 
 
-def _urls_to_regexes(urls):
+def _urls_to_regexes(
+    urls: typing.List[str],
+) -> typing.List[typing.Pattern[str]]:
     regexes = []
     for each in urls:
         parts = each.split("*")
@@ -36,8 +37,17 @@ def _urls_to_regexes(urls):
     return regexes
 
 
-def find_urls(urls=None, purge=False):
-    remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+def get_remembered_urls() -> typing.Dict[str, str]:
+    fancy_cache_keys, _ = get_fancy_cache_keys_and_duration()
+    remembered_urls = {}
+    for fancy_cache_key in fancy_cache_keys:
+        remembered_urls.update(cache.get(fancy_cache_key, {}))
+
+    return remembered_urls
+
+
+def find_urls(urls: typing.List[str] = None, purge: bool = False):
+    remembered_urls = get_remembered_urls()
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
@@ -65,31 +75,45 @@ def find_urls(urls=None, purge=False):
     if keys_to_delete:
         # means something was changed
 
+        fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
         if USE_MEMCACHED_CAS is True:
-            deleted = delete_keys_cas(keys_to_delete)
-            if deleted is True:
+            cas_deletion_results = delete_keys_cas(keys_to_delete)
+            for fancy_cache_key, value in cas_deletion_results.items():
+                if value is True:
+                    fancy_cache_keys.remove(fancy_cache_key)
+            if not fancy_cache_keys:
                 return
 
-        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
-        remembered_urls = delete_keys(keys_to_delete, remembered_urls)
-        cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+        for fancy_cache_key in fancy_cache_keys:
+            remembered_urls = cache.get(fancy_cache_key, {})
+            remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+            cache.set(fancy_cache_key, remembered_urls, duration)
 
 
-def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
-    result = False
-    tries = 0
-    while result is False and tries < 100:
-        remembered_urls, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
-        if remembered_urls is None:
-            return False
-        remembered_urls = delete_keys(keys_to_delete, remembered_urls)
-        result = cache._cache.cas(
-            REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
-        )
-        tries += 1
-    if result is False:
-        LOGGER.error("Fancy cache delete_keys_cas failed after %s tries", tries)
-    return result
+def delete_keys_cas(keys_to_delete: typing.List[str]) -> typing.Dict[str, bool]:
+    fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
+    total_result = {
+        fancy_cache_key: False for fancy_cache_key in fancy_cache_keys
+    }
+    for fancy_cache_key in fancy_cache_keys:
+        result = False
+        tries = 0
+        while result is False and tries < 100:
+            remembered_urls, cas_token = cache._cache.gets(fancy_cache_key)
+            if remembered_urls is None:
+                break
+            remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+            result = cache._cache.cas(
+                fancy_cache_key, remembered_urls, cas_token, duration
+            )
+            tries += 1
+        if result is False:
+            LOGGER.error(
+                "Fancy cache delete_keys_cas failed after %s tries", tries
+            )
+        else:
+            total_result[fancy_cache_key] = True
+    return total_result
 
 
 def delete_keys(
