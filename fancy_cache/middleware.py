@@ -177,10 +177,7 @@ class UpdateCacheMiddleware(object):
             remembered_urls[url] = cache_key
 
             result = self.cache._cache.cas(
-                REMEMBERED_URLS_KEY,
-                remembered_urls,
-                cas_token,
-                LONG_TIME
+                REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
             )
 
             tries += 1
@@ -188,7 +185,7 @@ class UpdateCacheMiddleware(object):
         if result is False:
             LOGGER.error(
                 "Django-fancy-cache failed to save using CAS after %s tries.",
-                tries
+                tries,
             )
         return result
 
