@@ -1,11 +1,19 @@
+import logging
 import re
+import typing
 
 from django.core.cache import cache
 
-from fancy_cache.middleware import REMEMBERED_URLS_KEY, LONG_TIME
+from fancy_cache.middleware import (
+    REMEMBERED_URLS_KEY,
+    LONG_TIME,
+    USE_MEMCACHED_CAS,
+)
 from fancy_cache.utils import md5
 
 __all__ = ("find_urls",)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def _match(url, regexes):
@@ -31,7 +39,7 @@ def _urls_to_regexes(urls):
 
 def find_urls(urls=None, purge=False):
     remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
-    _del_keys = []
+    keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
     for url in remembered_urls:
@@ -41,7 +49,7 @@ def find_urls(urls=None, purge=False):
                 continue
             if purge:
                 cache.delete(cache_key)
-                _del_keys.append(url)
+                keys_to_delete.append(url)
             misses_cache_key = "%s__misses" % url
             misses_cache_key = md5(misses_cache_key)
             hits_cache_key = "%s__hits" % url
@@ -55,13 +63,46 @@ def find_urls(urls=None, purge=False):
                 stats = {"hits": hits or 0, "misses": misses or 0}
             yield (url, cache_key, stats)
 
-    if _del_keys:
+    if keys_to_delete:
         # means something was changed
-        for url in _del_keys:
-            remembered_urls.pop(url)
-            misses_cache_key = "%s__misses" % url
-            hits_cache_key = "%s__hits" % url
-            cache.delete(misses_cache_key)
-            cache.delete(hits_cache_key)
 
+        if USE_MEMCACHED_CAS is True:
+            deleted = delete_keys_cas(keys_to_delete)
+            if deleted is True:
+                return
+
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+        remembered_urls = delete_keys(keys_to_delete, remembered_urls)
         cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+
+
+def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
+    result = False
+    tries = 0
+    while result is False and tries < 100:
+        remembered_urls, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
+        if remembered_urls is None:
+            return False
+        remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+        result = cache._cache.cas(
+            REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
+        )
+        tries += 1
+    if result is False:
+        LOGGER.error("Fancy cache delete_keys_cas failed after %s tries", tries)
+    return result
+
+
+def delete_keys(
+    keys_to_delete: typing.List[str], remembered_urls: typing.Dict[str, str]
+) -> typing.Dict[str, str]:
+    """
+    Helper function to delete `keys_to_delete` from the `remembered_urls` dict.
+    """
+    for url in keys_to_delete:
+        remembered_urls.pop(url)
+        misses_cache_key = "%s__misses" % url
+        hits_cache_key = "%s__hits" % url
+        cache.delete(misses_cache_key)
+        cache.delete(hits_cache_key)
+    return remembered_urls

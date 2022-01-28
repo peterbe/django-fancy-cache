@@ -20,9 +20,7 @@ LOGGER = logging.getLogger(__name__)
 REMEMBERED_URLS_KEY = "fancy-urls"
 LONG_TIME = 60 * 60 * 24 * 30
 USE_MEMCACHED_CAS = getattr(
-    settings,
-    "FANCY_USE_MEMCACHED_CHECK_AND_SET",
-    False
+    settings, "FANCY_USE_MEMCACHED_CHECK_AND_SET", False
 )
 
 
@@ -177,10 +175,7 @@ class UpdateCacheMiddleware(object):
             remembered_urls[url] = cache_key
 
             result = self.cache._cache.cas(
-                REMEMBERED_URLS_KEY,
-                remembered_urls,
-                cas_token,
-                LONG_TIME
+                REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
             )
 
             tries += 1
@@ -188,7 +183,7 @@ class UpdateCacheMiddleware(object):
         if result is False:
             LOGGER.error(
                 "Django-fancy-cache failed to save using CAS after %s tries.",
-                tries
+                tries,
             )
         return result
 
