@@ -1,8 +1,7 @@
-from django.urls import patterns, include, path
+from django.urls import include, path
 
 
-urlpatterns = patterns(
-    "",
+urlpatterns = [
     path("", include("example.app.urls")),
     path("fancy-cache", include("fancy_cache.urls")),
-)
+]
