@@ -39,6 +39,7 @@ setup(
     version=find_version("fancy_cache/__init__.py"),
     description="A Django 'cache_page' decorator on steroids",
     long_description=read("README.rst"),
+    long_description_content_type="text/x-rst",
     author="Peter Bengtsson",
     author_email="mail@peterbe.com",
     license="BSD",

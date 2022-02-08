@@ -4,9 +4,8 @@ import typing
 
 from django.core.cache import cache
 
-from fancy_cache.middleware import (
-    USE_MEMCACHED_CAS,
-)
+from fancy_cache.middleware import USE_MEMCACHED_CAS
+
 from fancy_cache.utils import md5, get_fancy_cache_keys_and_duration
 
 __all__ = ("find_urls",)
@@ -74,7 +73,6 @@ def find_urls(urls: typing.List[str] = None, purge: bool = False):
 
     if keys_to_delete:
         # means something was changed
-
         fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
         if USE_MEMCACHED_CAS is True:
             cas_deletion_results = delete_keys_cas(keys_to_delete)
