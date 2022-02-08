@@ -76,11 +76,14 @@ def find_urls(urls: typing.List[str] = None, purge: bool = False):
         fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
         if USE_MEMCACHED_CAS is True:
             cas_deletion_results = delete_keys_cas(keys_to_delete)
-            for fancy_cache_key, value in cas_deletion_results.items():
-                if value is True:
+
+            # If keys_to_delete were not successfully removed from any
+            # fancy_cache_key, identify that key and process it normally
+            # (without using Memcached CAS)
+            for fancy_cache_key, result in cas_deletion_results.items():
+                if result is True:
+                    # fancy_cache_key was handled appropriately, remove it.
                     fancy_cache_keys.remove(fancy_cache_key)
-            if not fancy_cache_keys:
-                return
 
         for fancy_cache_key in fancy_cache_keys:
             remembered_urls = cache.get(fancy_cache_key, {})
@@ -89,6 +92,10 @@ def find_urls(urls: typing.List[str] = None, purge: bool = False):
 
 
 def delete_keys_cas(keys_to_delete: typing.List[str]) -> typing.Dict[str, bool]:
+    """
+    Helper function to delete fancy cache saved keys
+    using Memcached Check and Set (CAS)
+    """
     fancy_cache_keys, duration = get_fancy_cache_keys_and_duration()
     total_result = {
         fancy_cache_key: False for fancy_cache_key in fancy_cache_keys
