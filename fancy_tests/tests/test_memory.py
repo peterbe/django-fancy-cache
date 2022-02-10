@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from nose.tools import eq_, ok_
@@ -9,14 +10,15 @@ from fancy_cache.memory import find_urls
 
 class TestMemory(unittest.TestCase):
     def setUp(self):
+        expiration_time = int(time.time()) + 5
         self.urls = {
-            "/page1.html": "key1",
-            "/page2.html": "key2",
-            "/page3.html?foo=bar": "key3",
-            "/page3.html?foo=else": "key4",
+            "/page1.html": ("key1", expiration_time),
+            "/page2.html": ("key2", expiration_time),
+            "/page3.html?foo=bar": ("key3", expiration_time),
+            "/page3.html?foo=else": ("key4", expiration_time),
         }
         for key, value in self.urls.items():
-            cache.set(value, key)
+            cache.set(value[0], key)
         cache.set(REMEMBERED_URLS_KEY, self.urls, 5)
 
     def tearDown(self):
@@ -26,14 +28,14 @@ class TestMemory(unittest.TestCase):
         found = list(find_urls([]))
         eq_(len(found), 4)
         for key, value in self.urls.items():
-            pair = (key, value, None)
+            pair = (key, value[0], None)
             ok_(pair in found)
 
     def test_find_and_purge_all_urls(self):
         found = list(find_urls([], purge=True))
         eq_(len(found), 4)
         for key, value in self.urls.items():
-            pair = (key, value, None)
+            pair = (key, value[0], None)
             ok_(pair in found)
         found = list(find_urls([]))
         eq_(len(found), 0)
