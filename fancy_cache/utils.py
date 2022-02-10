@@ -2,13 +2,6 @@ import hashlib
 import time
 import typing
 
-from fancy_cache.constants import LONG_TIME, REMEMBERED_URLS_KEY
-
-from django.conf import settings
-from django.core.cache import cache
-
-CACHE_N_DAYS = getattr(settings, "FANCY_CACHE_N_DAYS", None)
-
 
 def md5(x) -> str:
     return hashlib.md5(x.encode("utf-8")).hexdigest()
