@@ -4,11 +4,8 @@ import typing
 
 from django.core.cache import cache
 
-from fancy_cache.middleware import (
-    REMEMBERED_URLS_KEY,
-    LONG_TIME,
-    USE_MEMCACHED_CAS,
-)
+from fancy_cache.constants import LONG_TIME, REMEMBERED_URLS_KEY
+from fancy_cache.middleware import USE_MEMCACHED_CAS
 from fancy_cache.utils import md5
 
 __all__ = ("find_urls",)

@@ -3,7 +3,7 @@ import unittest
 from nose.tools import eq_, ok_
 from django.core.cache import cache
 
-from fancy_cache.middleware import REMEMBERED_URLS_KEY
+from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
 
 
