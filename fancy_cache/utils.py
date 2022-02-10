@@ -8,7 +8,7 @@ def md5(x) -> str:
 
 
 def filter_remembered_urls(
-    remembered_urls,
+    remembered_urls: typing.Dict[str, typing.Tuple[str, int]],
 ) -> typing.Dict[str, typing.Tuple[str, int]]:
     """
     Filter out any expired URLs from Fancy Cache's remembered urls.
