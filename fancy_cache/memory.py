@@ -16,7 +16,7 @@ __all__ = ("find_urls",)
 LOGGER = logging.getLogger(__name__)
 
 
-def _match(url, regexes):
+def _match(url: str, regexes: typing.List[typing.Pattern[str]]):
     if not regexes:
         return url
     for regex in regexes:
@@ -25,7 +25,9 @@ def _match(url, regexes):
     return False
 
 
-def _urls_to_regexes(urls):
+def _urls_to_regexes(
+    urls: typing.List[str],
+) -> typing.List[typing.Pattern[str]]:
     regexes = []
     for each in urls:
         parts = each.split("*")
@@ -37,7 +39,7 @@ def _urls_to_regexes(urls):
     return regexes
 
 
-def find_urls(urls=None, purge=False):
+def find_urls(urls: typing.List[str] = None, purge: bool = False):
     remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
     keys_to_delete = []
     if urls:

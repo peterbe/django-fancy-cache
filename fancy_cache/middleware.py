@@ -155,7 +155,7 @@ class UpdateCacheMiddleware(object):
         remembered_urls[url] = cache_key
         self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
 
-    def _remember_url_cas(self, url, cache_key):
+    def _remember_url_cas(self, url: str, cache_key: str) -> bool:
         """
         Helper function to use Memcached CAS to store remembered URLs.
         This addresses race conditions when using Memcached.
