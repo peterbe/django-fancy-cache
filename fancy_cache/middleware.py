@@ -117,7 +117,7 @@ class UpdateCacheMiddleware(object):
                 )
 
                 if self.remember_all_urls:
-                    self.remember_url(request, cache_key, timeout)
+                    self.remember_url(request, cache_key)
 
             self.cache.set(cache_key, response, timeout)
 
@@ -126,7 +126,7 @@ class UpdateCacheMiddleware(object):
 
         return response
 
-    def remember_url(self, request, cache_key, timeout):
+    def remember_url(self, request, cache_key):
         """
         Function to remember a newly cached URL.
 
