@@ -7,7 +7,10 @@ import logging
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS
-from django.middleware.cache import FetchFromCacheMiddleware, UpdateCacheMiddleware
+from django.middleware.cache import (
+    FetchFromCacheMiddleware,
+    UpdateCacheMiddleware,
+)
 from django.utils.encoding import iri_to_uri
 from django.utils.cache import (
     get_cache_key,
@@ -283,7 +286,9 @@ class FancyFetchFromCacheMiddleware(FetchFromCacheMiddleware):
         return response
 
 
-class FancyCacheMiddleware(FancyUpdateCacheMiddleware, FancyFetchFromCacheMiddleware):
+class FancyCacheMiddleware(
+    FancyUpdateCacheMiddleware, FancyFetchFromCacheMiddleware
+):
     """
     Cache middleware that provides basic behavior for many simple sites.
 
