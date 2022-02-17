@@ -1,12 +1,20 @@
+"""
+Middleware based on Django's cache middleware.
+See https://github.com/django/django/blob/main/django/middleware/cache.py
+"""
 import functools
 import logging
 
-from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
-from django.core.cache import caches, DEFAULT_CACHE_ALIAS
+from django.core.cache import DEFAULT_CACHE_ALIAS
+from django.middleware.cache import (
+    FetchFromCacheMiddleware,
+    UpdateCacheMiddleware,
+)
 from django.utils.encoding import iri_to_uri
 from django.utils.cache import (
     get_cache_key,
+    has_vary_header,
     learn_cache_key,
     patch_response_headers,
     get_max_age,
@@ -63,46 +71,55 @@ class RequestPath(object):
         return "%s%s" % (this.path, ("?" + iri_to_uri(qs)) if qs else "")
 
 
-class UpdateCacheMiddleware(object):
+class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
     """
     Response-phase cache middleware that updates the cache if the response is
     cacheable.
 
     Must be used as part of the two-part update/fetch cache middleware.
-    UpdateCacheMiddleware must be the first piece of middleware in
-    MIDDLEWARE_CLASSES so that it'll get called last during the response phase.
+    UpdateCacheMiddleware must be the first piece of middleware in MIDDLEWARE
+    so that it'll get called last during the response phase.
     """
 
+    def __init__(self, get_response):
+        super().__init__(get_response)
+
     def process_response(self, request, response):
-        """Sets the cache, if needed."""
-        if (
-            not hasattr(request, "_cache_update_cache")
-            or not request._cache_update_cache
-        ):
+        """Set the cache, if needed."""
+        if not self._should_update_cache(request, response):
             # We don't need to update the cache, just return.
             return response
-        if request.method != "GET":
-            # This is a stronger requirement than above. It is needed
-            # because of interactions between this middleware and the
-            # HTTPMiddleware, which throws the body of a HEAD-request
-            # away before this middleware gets a chance to cache it.
+
+        if response.streaming or response.status_code not in (200, 304):
             return response
-        if not response.status_code == 200:
+
+        # Don't cache responses that set a user-specific (and maybe security
+        # sensitive) cookie in response to a cookie-less request.
+        if (
+            not request.COOKIES
+            and response.cookies
+            and has_vary_header(response, "Cookie")
+        ):
             return response
-        # Try to get the timeout from the "max-age" section of the "Cache-
-        # Control" header before reverting to using the default cache_timeout
-        # length.
-        timeout = get_max_age(response)
+
+        # Don't cache a response with 'Cache-Control: private'
+        if "private" in response.get("Cache-Control", ()):
+            return response
+
+        # Page timeout takes precedence over the "max-age" and the default
+        # cache timeout.
+        timeout = self.page_timeout
         if timeout is None:
-            timeout = self.cache_timeout
-        elif timeout == 0:
-            # max-age was set to 0, don't bother caching.
-            return response
-
-        if self.patch_headers:
-            patch_response_headers(response, timeout)
-
-        if timeout:
+            # The timeout from the "max-age" section of the "Cache-Control"
+            # header takes precedence over the default cache timeout.
+            timeout = get_max_age(response)
+            if timeout is None:
+                timeout = self.cache_timeout
+            elif timeout == 0:
+                # max-age was set to 0, don't cache.
+                return response
+        patch_response_headers(response, timeout)
+        if timeout and response.status_code == 200:
             if callable(self.key_prefix):
                 key_prefix = self.key_prefix(request)
             else:
@@ -112,13 +129,18 @@ class UpdateCacheMiddleware(object):
 
             with RequestPath(request, self.only_get_keys, self.forget_get_keys):
                 cache_key = learn_cache_key(
-                    request, response, timeout, key_prefix
+                    request, response, timeout, key_prefix, cache=self.cache
                 )
 
                 if self.remember_all_urls:
                     self.remember_url(request, cache_key)
 
-            self.cache.set(cache_key, response, timeout)
+            if hasattr(response, "render") and callable(response.render):
+                response.add_post_render_callback(
+                    lambda r: self.cache.set(cache_key, r, timeout)
+                )
+            else:
+                self.cache.set(cache_key, response, timeout)
 
         if self.post_process_response_always:
             response = self.post_process_response_always(response, request)
@@ -187,18 +209,21 @@ class UpdateCacheMiddleware(object):
         return result
 
 
-class FetchFromCacheMiddleware(object):
+class FancyFetchFromCacheMiddleware(FetchFromCacheMiddleware):
     """
     Request-phase cache middleware that fetches a page from the cache.
 
     Must be used as part of the two-part update/fetch cache middleware.
-    FetchFromCacheMiddleware must be the last piece of middleware in
-    MIDDLEWARE_CLASSES so that it'll get called last during the request phase.
+    FetchFromCacheMiddleware must be the last piece of middleware in MIDDLEWARE
+    so that it'll get called last during the request phase.
     """
+
+    def __init__(self, get_response):
+        super().__init__(get_response)
 
     def process_request(self, request):
         """
-        Checks whether the page is already cached and returns the cached
+        Check whether the page is already cached and return the cached
         version if available.
         """
         response = self._process_request(request)
@@ -216,36 +241,9 @@ class FetchFromCacheMiddleware(object):
         return response
 
     def _process_request(self, request):
-        if self.cache_anonymous_only:
-            if not hasattr(request, "user"):
-                raise ImproperlyConfigured(
-                    "The Django cache middleware with "
-                    "CACHE_MIDDLEWARE_ANONYMOUS_ONLY=True requires "
-                    "authentication middleware to be installed. Edit your "
-                    "MIDDLEWARE_CLASSES setting to insert "
-                    "'django.contrib.auth.middleware.AuthenticationMiddleware'"
-                    "before the CacheMiddleware."
-                )
-
         if request.method not in ("GET", "HEAD"):
             request._cache_update_cache = False
-            # Don't bother checking the cache.
-            return None
-
-        # if (
-        #    request.GET and
-        #    not callable(self.key_prefix) and
-        #    not self.only_get_keys
-        # ):
-        #    request._cache_update_cache = False
-        #    # Default behaviour for requests with GET parameters: don't bother
-        #    # checking the cache.
-        #    return None
-
-        if self.cache_anonymous_only and request.user.is_authenticated():
-            request._cache_update_cache = False
-            # Don't cache requests from authenticated users.
-            return None
+            return None  # Don't bother checking the cache.
 
         if callable(self.key_prefix):
             key_prefix = self.key_prefix(request)
@@ -258,19 +256,27 @@ class FetchFromCacheMiddleware(object):
             key_prefix = self.key_prefix
 
         with RequestPath(request, self.only_get_keys, self.forget_get_keys):
-            cache_key = get_cache_key(request, key_prefix)
+            # try and get the cached GET response
+            cache_key = get_cache_key(
+                request, key_prefix, "GET", cache=self.cache
+            )
 
         if cache_key is None:
             request._cache_update_cache = True
-            # No cache information available, need to rebuild.
-            return None
+            return None  # No cache information available, need to rebuild.
+        response = self.cache.get(cache_key)
+        # if it wasn't found and we are looking for a HEAD, try looking just for that
+        if response is None and request.method == "HEAD":
+            cache_key = get_cache_key(
+                request, key_prefix, "HEAD", cache=self.cache
+            )
+            response = self.cache.get(cache_key)
 
-        response = self.cache.get(cache_key, None)
         if response is None:
             request._cache_update_cache = True
-            # No cache information available, need to rebuild.
-            return None
+            return None  # No cache information available, need to rebuild.
 
+        # hit, return cached response
         request._cache_update_cache = False
         if self.post_process_response_always:
             response = self.post_process_response_always(
@@ -280,7 +286,9 @@ class FetchFromCacheMiddleware(object):
         return response
 
 
-class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
+class FancyCacheMiddleware(
+    FancyUpdateCacheMiddleware, FancyFetchFromCacheMiddleware
+):
     """
     Cache middleware that provides basic behavior for many simple sites.
 
@@ -294,13 +302,6 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
     :param key_prefix:
         Either a string or a callable function. If it's a callable function,
         it's called with the request as the first and only argument.
-
-    :param cache_anonymous_only:
-        Guess!
-
-    :param patch_headers:
-        Basically, if you set a cache_timeout of 60 it additionally sets a
-        Expires header with that timeout.
 
     :param post_process_response:
         Callable function that gets called with the response (and request) just
@@ -331,13 +332,9 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
 
     def __init__(
         self,
-        *args,
-        cache_timeout=settings.CACHE_MIDDLEWARE_SECONDS,
-        key_prefix=settings.CACHE_MIDDLEWARE_KEY_PREFIX,
-        cache_anonymous_only=getattr(
-            settings, "CACHE_MIDDLEWARE_ANONYMOUS_ONLY", False
-        ),
-        patch_headers=False,
+        get_response,
+        cache_timeout=None,
+        page_timeout=None,
         post_process_response=None,
         post_process_response_always=None,
         only_get_keys=None,
@@ -348,10 +345,31 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         ),
         **kwargs
     ):
-        self.patch_headers = patch_headers
-        self.cache_timeout = cache_timeout
-        self.key_prefix = key_prefix
-        self.cache_anonymous_only = cache_anonymous_only
+        super().__init__(get_response)
+        # We need to differentiate between "provided, but using default value",
+        # and "not provided". If the value is provided using a default, then
+        # we fall back to system defaults. If it is not provided at all,
+        # we need to use middleware defaults.
+
+        try:
+            key_prefix = kwargs["key_prefix"]
+            if key_prefix is None:
+                key_prefix = ""
+            self.key_prefix = key_prefix
+        except KeyError:
+            pass
+        try:
+            cache_alias = kwargs["cache_alias"]
+            if cache_alias is None:
+                cache_alias = DEFAULT_CACHE_ALIAS
+            self.cache_alias = cache_alias
+        except KeyError:
+            pass
+
+        if cache_timeout is not None:
+            self.cache_timeout = cache_timeout
+        self.page_timeout = page_timeout
+
         self.post_process_response = post_process_response
         self.post_process_response_always = post_process_response_always
         if isinstance(only_get_keys, str):
@@ -362,13 +380,3 @@ class CacheMiddleware(UpdateCacheMiddleware, FetchFromCacheMiddleware):
         self.forget_get_keys = forget_get_keys
         self.remember_all_urls = remember_all_urls
         self.remember_stats_all_urls = remember_stats_all_urls
-
-        try:
-            cache_alias = kwargs["cache_alias"]
-            if cache_alias is None:
-                cache_alias = DEFAULT_CACHE_ALIAS
-        except KeyError:
-            cache_alias = settings.CACHE_MIDDLEWARE_ALIAS
-
-        self.cache_alias = cache_alias
-        self.cache = caches[self.cache_alias]
