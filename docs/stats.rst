@@ -53,11 +53,10 @@ management command to get an output of this::
 
 Another way add ``django-fancy-cache`` to your root urls.py like this::
 
-    urlpatterns = patterns(
-        '',
+    urlpatterns = [
         ...your other stuff...,
-        url(r'fancy-cache', include('fancy_cache.urls')),
-    )
+        path('fancy-cache', include('fancy_cache.urls')),
+    ]
 
 
 Now you can visit ``http://localhost:8000/fancy-cache``. It'll give
