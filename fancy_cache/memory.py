@@ -45,6 +45,8 @@ def find_urls(urls: typing.List[str] = None, purge: bool = False):
         if not urls or _match(url, regexes):
             cache_key = remembered_urls[url]
             if not cache.get(cache_key):
+                if purge:
+                    keys_to_delete.append(url)
                 continue
             if purge:
                 cache.delete(cache_key)
