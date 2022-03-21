@@ -5,6 +5,7 @@ See https://github.com/django/django/blob/main/django/middleware/cache.py
 import functools
 import logging
 import time
+import typing
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS
@@ -82,7 +83,7 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
     so that it'll get called last during the response phase.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response=None):
         super().__init__(get_response)
 
     def process_response(self, request, response):
@@ -109,6 +110,7 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
 
         # Page timeout takes precedence over the "max-age" and the default
         # cache timeout.
+        import pdb; pdb.set_trace()
         timeout = self.page_timeout
         if timeout is None:
             # The timeout from the "max-age" section of the "Cache-Control"
@@ -230,7 +232,7 @@ class FancyFetchFromCacheMiddleware(FetchFromCacheMiddleware):
     so that it'll get called last during the request phase.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response=None):
         super().__init__(get_response)
 
     def process_request(self, request):
@@ -344,9 +346,9 @@ class FancyCacheMiddleware(
 
     def __init__(
         self,
-        get_response,
+        get_response: typing.Callable = None,
         cache_timeout=None,
-        page_timeout=None,
+        page_timeout: int = None,
         post_process_response=None,
         post_process_response_always=None,
         only_get_keys=None,

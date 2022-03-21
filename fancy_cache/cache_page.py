@@ -5,8 +5,10 @@ from django.utils.decorators import decorator_from_middleware_with_args
 from .middleware import FancyCacheMiddleware
 
 
-def cache_page(timeout: float, *args, **kwargs) -> typing.Callable:
-    cache_alias = kwargs.pop("cache", None)
+def cache_page(timeout: int, *, cache=None, key_prefix=None, **kwargs) -> typing.Callable:
     return decorator_from_middleware_with_args(FancyCacheMiddleware)(
-        timeout, *args, cache_alias=cache_alias, **kwargs
+        page_timeout=timeout,
+        cache_alias=cache,
+        key_prefix=key_prefix,
+        **kwargs
     )
