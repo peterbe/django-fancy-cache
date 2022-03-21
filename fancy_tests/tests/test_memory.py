@@ -59,6 +59,25 @@ class TestMemory(unittest.TestCase):
         eq_(len(found), 3)
         ok_(("/page1.html", "key1", None) not in found)
 
+    def test_purge_one_expired_url(self):
+        """
+        If a URL has expired from the cache it should still
+        be deleted from remembered URLs when `find_urls` is called
+        with `purge=True`.
+        """
+        cache.delete("key1")
+        ok_(not cache.get("key1"))
+        ok_("/page1.html" in cache.get(REMEMBERED_URLS_KEY))
+        found = list(find_urls(["/page1.html"], purge=True))
+        eq_(len(found), 0)
+        ok_(not cache.get("key1"))
+        ok_("/page1.html" not in cache.get(REMEMBERED_URLS_KEY))
+
+        # find all the rest in there
+        found = list(find_urls([]))
+        eq_(len(found), 3)
+        ok_(("/page1.html", "key1", None) not in found)
+
     def test_some_urls(self):
         found = list(find_urls(["/page2.html*"]))
         eq_(len(found), 1)

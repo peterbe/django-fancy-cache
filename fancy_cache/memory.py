@@ -61,6 +61,8 @@ def find_urls(
             cache_key = cache_key_tuple[0]
 
             if not cache.get(cache_key):
+                if purge:
+                    keys_to_delete.append(url)
                 continue
             if purge:
                 cache.delete(cache_key)
