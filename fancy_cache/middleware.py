@@ -110,7 +110,6 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
 
         # Page timeout takes precedence over the "max-age" and the default
         # cache timeout.
-        import pdb; pdb.set_trace()
         timeout = self.page_timeout
         if timeout is None:
             # The timeout from the "max-age" section of the "Cache-Control"
