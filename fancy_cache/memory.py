@@ -6,7 +6,7 @@ from django.core.cache import cache
 
 from fancy_cache.constants import LONG_TIME, REMEMBERED_URLS_KEY
 from fancy_cache.middleware import USE_MEMCACHED_CAS
-from fancy_cache.utils import md5
+from fancy_cache.utils import md5, filter_remembered_urls
 
 __all__ = ("find_urls",)
 
@@ -36,14 +36,30 @@ def _urls_to_regexes(
     return regexes
 
 
-def find_urls(urls: typing.List[str] = None, purge: bool = False):
+def find_urls(
+    urls: typing.List[str] = None, purge: bool = False
+) -> typing.Generator[
+    typing.Tuple[str, str, typing.Optional[typing.Dict[str, int]]], None, None
+]:
     remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
     for url in remembered_urls:
         if not urls or _match(url, regexes):
-            cache_key = remembered_urls[url]
+            cache_key_tuple = remembered_urls[url]
+
+            # TODO: Remove the check for tuple in a future release as it will
+            # no longer be needed once the new dictionary structure {url: (cache_key, expiration_time)}
+            # has been implemented.
+            if isinstance(cache_key_tuple, str):
+                cache_key_tuple = (
+                    cache_key_tuple,
+                    0,
+                )
+
+            cache_key = cache_key_tuple[0]
+
             if not cache.get(cache_key):
                 if purge:
                     keys_to_delete.append(url)
@@ -95,8 +111,9 @@ def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
 
 
 def delete_keys(
-    keys_to_delete: typing.List[str], remembered_urls: typing.Dict[str, str]
-) -> typing.Dict[str, str]:
+    keys_to_delete: typing.List[str],
+    remembered_urls: typing.Dict[str, typing.Tuple[str, int]],
+) -> typing.Dict[str, typing.Tuple[str, int]]:
     """
     Helper function to delete `keys_to_delete` from the `remembered_urls` dict.
     """
@@ -106,4 +123,5 @@ def delete_keys(
         hits_cache_key = "%s__hits" % url
         cache.delete(misses_cache_key)
         cache.delete(hits_cache_key)
+    remembered_urls = filter_remembered_urls(remembered_urls)
     return remembered_urls

@@ -1,5 +1,6 @@
 import uuid
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from fancy_cache import cache_page
 
 
@@ -60,4 +61,10 @@ def home6(request):
 
 @cache_page(60, cache="second_backend")
 def home7(request):
+    return _view(request)
+
+
+@never_cache
+@cache_page(60, remember_stats_all_urls=True, remember_all_urls=True)
+def home8(request):
     return _view(request)

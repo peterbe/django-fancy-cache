@@ -6,9 +6,8 @@ from .middleware import FancyCacheMiddleware
 
 
 def cache_page(
-    timeout: typing.Optional[float], *args, **kwargs
+    timeout: typing.Optional[float], *, cache=None, key_prefix=None, **kwargs
 ) -> typing.Callable:
-    cache_alias = kwargs.pop("cache", None)
     return decorator_from_middleware_with_args(FancyCacheMiddleware)(
-        timeout, *args, cache_alias=cache_alias, **kwargs
+        page_timeout=timeout, cache_alias=cache, key_prefix=key_prefix, **kwargs
     )

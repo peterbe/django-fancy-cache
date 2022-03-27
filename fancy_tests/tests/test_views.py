@@ -1,8 +1,10 @@
+import time
 import unittest
 import re
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
 from django.core.cache import cache, caches
+from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
 
 from . import views
@@ -181,6 +183,8 @@ class TestViews(unittest.TestCase):
         eq_(random_string_2, random_string_3)
 
     def test_remember_stats_all_urls(self):
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        eq_(remembered_urls, None)
         request = self.factory.get("/anything")
         response = views.home6(request)
         eq_(response.status_code, 200)
@@ -191,6 +195,13 @@ class TestViews(unittest.TestCase):
         eq_(match[2]["hits"], 0)
         eq_(match[2]["misses"], 1)
 
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        cache_key = remembered_urls["/anything"][0]
+        timeout = remembered_urls["/anything"][1]
+        ok_(timeout > int(time.time()))
+
         # second time
         response = views.home6(request)
         eq_(response.status_code, 200)
@@ -198,6 +209,47 @@ class TestViews(unittest.TestCase):
         eq_(match[0], "/anything")
         eq_(match[2]["hits"], 1)
         eq_(match[2]["misses"], 1)
+
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        eq_(remembered_urls["/anything"][0], cache_key)
+        eq_(remembered_urls["/anything"][1], timeout)
+        ok_(timeout > int(time.time()))
+
+    def test_remember_stats_all_urls_with_never_cache_decorator(self):
+        request = self.factory.get("/anything")
+        response = views.home8(request)
+        eq_(response.status_code, 200)
+
+        # now ask the memory thing
+        (match,) = find_urls(urls=["/anything"])
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 0)
+        eq_(match[2]["misses"], 1)
+
+        # TODO: assert that the timeout was passed as expected.
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        cache_key = remembered_urls["/anything"][0]
+        timeout = remembered_urls["/anything"][1]
+        ok_(timeout > int(time.time()))
+
+        # second time
+        response = views.home8(request)
+        eq_(response.status_code, 200)
+        (match,) = find_urls(urls=["/anything"])
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 1)
+        eq_(match[2]["misses"], 1)
+
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        eq_(remembered_urls["/anything"][0], cache_key)
+        eq_(remembered_urls["/anything"][1], timeout)
+        ok_(timeout > int(time.time()))
 
     def test_remember_stats_all_urls_looong_url(self):
         request = self.factory.get(

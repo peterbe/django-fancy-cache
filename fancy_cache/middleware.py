@@ -4,6 +4,8 @@ See https://github.com/django/django/blob/main/django/middleware/cache.py
 """
 import functools
 import logging
+import time
+import typing
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS
@@ -21,8 +23,8 @@ from django.utils.cache import (
 )
 from urllib.parse import parse_qs, urlencode
 
-from fancy_cache.utils import md5
 from fancy_cache.constants import REMEMBERED_URLS_KEY, LONG_TIME
+from fancy_cache.utils import md5, filter_remembered_urls
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +83,7 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
     so that it'll get called last during the response phase.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response=None):
         super().__init__(get_response)
 
     def process_response(self, request, response):
@@ -133,7 +135,7 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 )
 
                 if self.remember_all_urls:
-                    self.remember_url(request, cache_key)
+                    self.remember_url(request, cache_key, timeout)
 
             if hasattr(response, "render") and callable(response.render):
                 response.add_post_render_callback(
@@ -147,12 +149,16 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
 
         return response
 
-    def remember_url(self, request, cache_key):
+    def remember_url(self, request, cache_key: str, timeout: int) -> None:
         """
         Function to remember a newly cached URL.
 
         All cached URLs are remembered in a dictionary
         in the cache under REMEMBERED_URLS_KEY.
+
+        This dictionary is structured as follows:
+        - The key is the URL
+        - The value is a tuple (cache key string, expiration time in seconds integer)
 
         If USE_MEMCACHED_CAS is True, we try to use CAS (check and set)
         to set the dictionary via self.cache._cache.cas to avoid missing
@@ -162,21 +168,26 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
         https://github.com/peterbe/django-fancy-cache/issues/7
         """
         url = request.get_full_path()
+        expiration_time = int(time.time()) + timeout
+
         if USE_MEMCACHED_CAS is True:
             # Memcached check-and-set is available.
             # Try using check-and-set to avoid a race condition
             # in remembering urls; if this fails, fallback to cache.set.
-            result = self._remember_url_cas(url, cache_key)
+            result = self._remember_url_cas(url, cache_key, expiration_time)
             if result:
                 # Remembered URLs have been successfully saved
                 # via Memcached CAS.
                 return
 
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
-        remembered_urls[url] = cache_key
+        remembered_urls = filter_remembered_urls(remembered_urls)
+        remembered_urls[url] = (cache_key, expiration_time)
         self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
 
-    def _remember_url_cas(self, url: str, cache_key: str) -> bool:
+    def _remember_url_cas(
+        self, url: str, cache_key: str, expiration_time: int
+    ) -> bool:
         """
         Helper function to use Memcached CAS to store remembered URLs.
         This addresses race conditions when using Memcached.
@@ -193,7 +204,9 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 # No cache entry; set the cache using `cache.set`.
                 return False
 
-            remembered_urls[url] = cache_key
+            remembered_urls = filter_remembered_urls(remembered_urls)
+
+            remembered_urls[url] = (cache_key, expiration_time)
 
             result = self.cache._cache.cas(
                 REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
@@ -218,7 +231,7 @@ class FancyFetchFromCacheMiddleware(FetchFromCacheMiddleware):
     so that it'll get called last during the request phase.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response=None):
         super().__init__(get_response)
 
     def process_request(self, request):
@@ -332,9 +345,9 @@ class FancyCacheMiddleware(
 
     def __init__(
         self,
-        get_response,
+        get_response: typing.Callable = None,
         cache_timeout=None,
-        page_timeout=None,
+        page_timeout: int = None,
         post_process_response=None,
         post_process_response_always=None,
         only_get_keys=None,
