@@ -216,12 +216,19 @@ Or to run it without ``tox`` you can simply run::
 Changelog
 ---------
 
-(Sorry, been poor in maintaining this. Let's get it right from now)
+1.2.0
+    * Restructure the remembered_urls cache dict to clean up stale entries
+    * Update FancyCacheMiddleware to match latest Django CacheMiddlware
+      (Also renames to FancyCacheMiddleware)
+    * Apply Memcached check-and-set to the delete_keys function
+      if ``settings.FANCY_USE_MEMCACHED_CHECK_AND_SET = True``
+    * Drop support for Python <3.6
+    * Add support for Python 3.10 and Django 4.0
 
 1.1.0
     * If you use Memcached you can set
       ``settings.FANCY_USE_MEMCACHED_CHECK_AND_SET = True`` so that you
-      can use ``cache._cache.cas`` which only workd with Memcached.
+      can use ``cache._cache.cas`` which only workd with Memcached
 
 1.0.0
     * Drop support for Python <3.5 and Django <2.2.0
