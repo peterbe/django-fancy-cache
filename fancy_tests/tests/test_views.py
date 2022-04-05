@@ -311,7 +311,7 @@ class TestViews(unittest.TestCase):
 
         # clear second cache backend
         caches["dummy_backend"].clear()
-        response = views.home7(request)
+        response = views.home8(request)
         eq_(response.status_code, 200)
         random_string_2 = re.findall(
             "Random:(\w+)", response.content.decode("utf8")
