@@ -300,6 +300,9 @@ class TestViews(unittest.TestCase):
         ok_(random_string_1 != random_string_2)
 
     def test_cache_dummy_backend(self):
+        """
+        Test that the Dummy cache backend works as expected by not caching.
+        """
         request = self.factory.get("/anything")
 
         response = views.home8(request)
@@ -309,11 +312,13 @@ class TestViews(unittest.TestCase):
             "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
-        # clear second cache backend
-        caches["dummy_backend"].clear()
         response = views.home8(request)
         eq_(response.status_code, 200)
         random_string_2 = re.findall(
             "Random:(\w+)", response.content.decode("utf8")
         )[0]
         ok_(random_string_1 != random_string_2)
+
+        # Make sure clearing the dummy cache doesn't raise an error,
+        # even though it should do nothing.
+        caches["dummy_backend"].clear()
