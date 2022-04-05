@@ -8,7 +8,7 @@ import time
 import typing
 
 from django.conf import settings
-from django.core.cache import DEFAULT_CACHE_ALIAS
+from django.core.cache import DEFAULT_CACHE_ALIAS, caches
 from django.middleware.cache import (
     FetchFromCacheMiddleware,
     UpdateCacheMiddleware,
@@ -376,6 +376,7 @@ class FancyCacheMiddleware(
             if cache_alias is None:
                 cache_alias = DEFAULT_CACHE_ALIAS
             self.cache_alias = cache_alias
+            self.cache = caches[self.cache_alias]
         except KeyError:
             pass
 
