@@ -22,6 +22,10 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "unique-snowflake",
     },
+    "dummy_backend": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "LOCATION": "unique-snowflake",
+    },
 }
 
 INSTALLED_APPS = [

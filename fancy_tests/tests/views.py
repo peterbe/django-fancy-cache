@@ -64,7 +64,12 @@ def home7(request):
     return _view(request)
 
 
+@cache_page(60, cache="dummy_backend")
+def home8(request):
+    return _view(request)
+
+
 @never_cache
 @cache_page(60, remember_stats_all_urls=True, remember_all_urls=True)
-def home8(request):
+def home9(request):
     return _view(request)

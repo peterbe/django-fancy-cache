@@ -219,7 +219,7 @@ class TestViews(unittest.TestCase):
 
     def test_remember_stats_all_urls_with_never_cache_decorator(self):
         request = self.factory.get("/anything")
-        response = views.home8(request)
+        response = views.home9(request)
         eq_(response.status_code, 200)
 
         # now ask the memory thing
@@ -237,7 +237,7 @@ class TestViews(unittest.TestCase):
         ok_(timeout > int(time.time()))
 
         # second time
-        response = views.home8(request)
+        response = views.home9(request)
         eq_(response.status_code, 200)
         (match,) = find_urls(urls=["/anything"])
         eq_(match[0], "/anything")
@@ -292,6 +292,25 @@ class TestViews(unittest.TestCase):
 
         # clear second cache backend
         caches["second_backend"].clear()
+        response = views.home7(request)
+        eq_(response.status_code, 200)
+        random_string_2 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+        ok_(random_string_1 != random_string_2)
+
+    def test_cache_dummy_backend(self):
+        request = self.factory.get("/anything")
+
+        response = views.home8(request)
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
+        random_string_1 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+
+        # clear second cache backend
+        caches["dummy_backend"].clear()
         response = views.home7(request)
         eq_(response.status_code, 200)
         random_string_2 = re.findall(
