@@ -3,6 +3,7 @@ import unittest
 import re
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
+from django.test.utils import override_settings
 from django.core.cache import cache, caches
 from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
@@ -281,6 +282,36 @@ class TestViews(unittest.TestCase):
         eq_(match[2]["misses"], 1)
 
     def test_cache_backends(self):
+        request = self.factory.get("/anything")
+
+        response = views.home7(request)
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
+        random_string_1 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+
+        # clear second cache backend
+        caches["second_backend"].clear()
+        response = views.home7(request)
+        eq_(response.status_code, 200)
+        random_string_2 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+        ok_(random_string_1 != random_string_2)
+
+    @override_settings(
+        CACHES={
+            "second_backend": {
+                "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            }
+        }
+    )
+    def test_cache_backends_with_overridden_settings(self):
+        """
+        Test that the override_settings decorator allows us
+        to test views using the DummyCache.
+        """
         request = self.factory.get("/anything")
 
         response = views.home7(request)
