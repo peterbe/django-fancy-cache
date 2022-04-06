@@ -8,7 +8,7 @@ import time
 import typing
 
 from django.conf import settings
-from django.core.cache import DEFAULT_CACHE_ALIAS
+from django.core.cache import DEFAULT_CACHE_ALIAS, caches
 from django.middleware.cache import (
     FetchFromCacheMiddleware,
     UpdateCacheMiddleware,
@@ -196,9 +196,12 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
         result = False
         tries = 0  # Make sure an unexpected error doesn't cause a loop
         while result is False and tries <= 100:
-            remembered_urls, cas_token = self.cache._cache.gets(
-                REMEMBERED_URLS_KEY
-            )
+            try:
+                remembered_urls, cas_token = self.cache._cache.gets(
+                    REMEMBERED_URLS_KEY
+                )
+            except AttributeError:
+                return False
 
             if remembered_urls is None:
                 # No cache entry; set the cache using `cache.set`.
@@ -376,6 +379,15 @@ class FancyCacheMiddleware(
             if cache_alias is None:
                 cache_alias = DEFAULT_CACHE_ALIAS
             self.cache_alias = cache_alias
+            # TODO: Likely this will cause a conflict with this commit
+            # in Django 4.1+:
+            # https://github.com/django/django/commit/3ff7b15bb79f2ee5b7af245c55ae14546243bb77
+            # The commit uses a @property decorator to set self.cache
+            # instead of setting it directly as we do in the line below.
+            # We can likely solve this by simply removing this line,
+            # but will need to make sure that the library still works for
+            # older versions of Django that use this `self.cache =` method.
+            self.cache = caches[self.cache_alias]
         except KeyError:
             pass
 

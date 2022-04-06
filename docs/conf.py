@@ -40,8 +40,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"django-fancy-cache"
-copyright = u"2013, Peter Bengtsson"
+project = "django-fancy-cache"
+copyright = "2013, Peter Bengtsson"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,8 +184,8 @@ latex_documents = [
     (
         "index",
         "django-fancy-cache.tex",
-        u"django-fancy-cache Documentation",
-        u"Peter Bengtsson",
+        "django-fancy-cache Documentation",
+        "Peter Bengtsson",
         "manual",
     ),
 ]
@@ -219,8 +219,8 @@ man_pages = [
     (
         "index",
         "django-fancy-cache",
-        u"django-fancy-cache Documentation",
-        [u"Peter Bengtsson"],
+        "django-fancy-cache Documentation",
+        ["Peter Bengtsson"],
         1,
     )
 ]
@@ -238,8 +238,8 @@ texinfo_documents = [
     (
         "index",
         "django-fancy-cache",
-        u"django-fancy-cache Documentation",
-        u"Peter Bengtsson",
+        "django-fancy-cache Documentation",
+        "Peter Bengtsson",
         "django-fancy-cache",
         "One line description of project.",
         "Miscellaneous",
