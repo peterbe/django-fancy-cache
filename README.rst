@@ -216,6 +216,10 @@ Or to run it without ``tox`` you can simply run::
 Changelog
 ---------
 
+1.2.1
+    * Bugfix: conflict between the DummyCache backend when 
+      `FANCY_USE_MEMCACHED_CHECK_AND_SET` is `True`
+
 1.2.0
     * Restructure the remembered_urls cache dict to clean up stale entries
     * Update FancyCacheMiddleware to match latest Django CacheMiddlware
