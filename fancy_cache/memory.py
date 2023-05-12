@@ -97,10 +97,7 @@ def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
     result = False
     tries = 0
     while result is False and tries < 100:
-        try:
-            remembered_urls, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
-        except AttributeError:
-            return False
+        remembered_urls, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
         if remembered_urls is None:
             return False
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)

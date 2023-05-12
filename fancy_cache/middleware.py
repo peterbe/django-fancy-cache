@@ -196,12 +196,9 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
         result = False
         tries = 0  # Make sure an unexpected error doesn't cause a loop
         while result is False and tries <= 100:
-            try:
-                remembered_urls, cas_token = self.cache._cache.gets(
-                    REMEMBERED_URLS_KEY
-                )
-            except AttributeError:
-                return False
+            remembered_urls, cas_token = self.cache._cache.gets(
+                REMEMBERED_URLS_KEY
+            )
 
             if remembered_urls is None:
                 # No cache entry; set the cache using `cache.set`.
