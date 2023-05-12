@@ -179,6 +179,17 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 # Remembered URLs have been successfully saved
                 # via Memcached CAS.
                 return
+            # CAS uses `cache._cache.get/set` so we need to set the
+            # REMEMBERED_URLS dict at that location.
+            # This is because CAS cannot call `BaseCache.make_key` to generate
+            # the key when it tries to get a cache entry set by `cache.get/set`.
+            remembered_urls = self.cache._cache.get(REMEMBERED_URLS_KEY, {})
+            remembered_urls = filter_remembered_urls(remembered_urls)
+            remembered_urls[url] = (cache_key, expiration_time)
+            self.cache._cache.set(
+                REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME
+            )
+            return
 
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls = filter_remembered_urls(remembered_urls)

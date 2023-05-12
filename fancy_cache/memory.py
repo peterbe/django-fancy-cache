@@ -41,7 +41,10 @@ def find_urls(
 ) -> typing.Generator[
     typing.Tuple[str, str, typing.Optional[typing.Dict[str, int]]], None, None
 ]:
-    remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+    if USE_MEMCACHED_CAS is True:
+        remembered_urls = cache._cache.get(REMEMBERED_URLS_KEY, {})
+    else:
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
@@ -87,6 +90,14 @@ def find_urls(
             deleted = delete_keys_cas(keys_to_delete)
             if deleted is True:
                 return
+            # CAS uses `cache._cache.get/set` so we need to set the
+            # REMEMBERED_URLS dict at that location.
+            # This is because CAS cannot call `BaseCache.make_key` to generate
+            # the key when it tries to get a cache entry set by `cache.get/set`.
+            remembered_urls = cache._cache.get(REMEMBERED_URLS_KEY, {})
+            remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+            cache._cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+            return
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
