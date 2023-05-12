@@ -1,7 +1,10 @@
+import json
 import logging
 import re
 import typing
+import zlib
 
+from django.conf import settings
 from django.core.cache import cache
 
 from fancy_cache.constants import LONG_TIME, REMEMBERED_URLS_KEY
@@ -11,6 +14,10 @@ from fancy_cache.utils import md5, filter_remembered_urls
 __all__ = ("find_urls",)
 
 LOGGER = logging.getLogger(__name__)
+
+COMPRESS_REMEMBERED_URLS = getattr(
+    settings, "FANCY_COMPRESS_REMEMBERED_URLS", False
+)
 
 
 def _match(url: str, regexes: typing.List[typing.Pattern[str]]):
@@ -42,6 +49,8 @@ def find_urls(
     typing.Tuple[str, str, typing.Optional[typing.Dict[str, int]]], None, None
 ]:
     remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+    if COMPRESS_REMEMBERED_URLS:
+        remembered_urls = json.loads(zlib.decompress(remembered_urls).decode())
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
@@ -89,7 +98,15 @@ def find_urls(
                 return
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = json.loads(
+                zlib.decompress(remembered_urls).decode()
+            )
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = zlib.compress(
+                json.dumps(remembered_urls).encode()
+            )
         cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
 
 
@@ -103,7 +120,17 @@ def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
             return False
         if remembered_urls is None:
             return False
+
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = json.loads(
+                zlib.decompress(remembered_urls).decode()
+            )
+
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = zlib.compress(
+                json.dumps(remembered_urls).encode()
+            )
         result = cache._cache.cas(
             REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
         )

@@ -1,5 +1,8 @@
+import json
+import mock
 import time
 import unittest
+import zlib
 
 from nose.tools import eq_, ok_
 from django.core.cache import cache
@@ -32,6 +35,19 @@ class TestMemory(unittest.TestCase):
             ok_(pair in found)
 
     def test_find_and_purge_all_urls(self):
+        found = list(find_urls([], purge=True))
+        eq_(len(found), 4)
+        for key, value in self.urls.items():
+            pair = (key, value[0], None)
+            ok_(pair in found)
+        found = list(find_urls([]))
+        eq_(len(found), 0)
+
+    @mock.patch("fancy_cache.memory.COMPRESS_REMEMBERED_URLS", True)
+    def test_find_and_purge_all_urls_with_zlib_compression(self):
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        remembered_urls = zlib.compress(json.dumps(remembered_urls).encode())
+        cache.set(REMEMBERED_URLS_KEY, remembered_urls, 5)
         found = list(find_urls([], purge=True))
         eq_(len(found), 4)
         for key, value in self.urls.items():
