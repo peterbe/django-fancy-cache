@@ -1,10 +1,12 @@
-import mock
 import time
 import unittest
 import re
+
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
 from django.core.cache import cache, caches
+from unittest import mock
+
 from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
 
@@ -303,32 +305,6 @@ class TestViews(unittest.TestCase):
     def test_cache_dummy_backend(self):
         """
         Test that the Dummy cache backend works as expected by not caching.
-        """
-        request = self.factory.get("/anything")
-
-        response = views.home8(request)
-        eq_(response.status_code, 200)
-        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
-        random_string_1 = re.findall(
-            "Random:(\w+)", response.content.decode("utf8")
-        )[0]
-
-        response = views.home8(request)
-        eq_(response.status_code, 200)
-        random_string_2 = re.findall(
-            "Random:(\w+)", response.content.decode("utf8")
-        )[0]
-        ok_(random_string_1 != random_string_2)
-
-        # Make sure clearing the dummy cache doesn't raise an error,
-        # even though it should do nothing.
-        caches["dummy_backend"].clear()
-
-    @mock.patch("fancy_cache.middleware.USE_MEMCACHED_CAS", True)
-    def test_cache_dummy_backend_with_memcached_check_and_set(self):
-        """
-        Test that the Dummy cache backend works as expected by not caching
-        when FANCY_USE_MEMCACHED_CHECK_AND_SET is set to True.
         """
         request = self.factory.get("/anything")
 

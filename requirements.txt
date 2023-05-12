@@ -1,6 +1,6 @@
 # Tests
-mock>=0.8.0
-Django>=1.4.3
+Django>=3.2.0,<4.1
 django-nose
 fabric
+pylibmc
 sphinx
