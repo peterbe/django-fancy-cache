@@ -1,10 +1,12 @@
-import mock
 import time
 import unittest
 import re
+
 from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
 from django.core.cache import cache, caches
+from unittest import mock
+
 from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
 
