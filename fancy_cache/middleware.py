@@ -3,9 +3,11 @@ Middleware based on Django's cache middleware.
 See https://github.com/django/django/blob/main/django/middleware/cache.py
 """
 import functools
+import json
 import logging
 import time
 import typing
+import zlib
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS, caches
@@ -30,6 +32,9 @@ LOGGER = logging.getLogger(__name__)
 
 USE_MEMCACHED_CAS = getattr(
     settings, "FANCY_USE_MEMCACHED_CHECK_AND_SET", False
+)
+COMPRESS_REMEMBERED_URLS = getattr(
+    settings, "FANCY_COMPRESS_REMEMBERED_URLS", False
 )
 
 
@@ -192,8 +197,16 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
             return
 
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = json.loads(
+                zlib.decompress(remembered_urls).decode()
+            )
         remembered_urls = filter_remembered_urls(remembered_urls)
         remembered_urls[url] = (cache_key, expiration_time)
+        if COMPRESS_REMEMBERED_URLS:
+            remembered_urls = zlib.compress(
+                json.dumps(remembered_urls).encode()
+            )
         self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
 
     def _remember_url_cas(
@@ -215,9 +228,19 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 # No cache entry; set the cache using `cache.set`.
                 return False
 
+            if COMPRESS_REMEMBERED_URLS:
+                remembered_urls = json.loads(
+                    zlib.decompress(remembered_urls).decode()
+                )
+
             remembered_urls = filter_remembered_urls(remembered_urls)
 
             remembered_urls[url] = (cache_key, expiration_time)
+
+            if COMPRESS_REMEMBERED_URLS:
+                remembered_urls = zlib.compress(
+                    json.dumps(remembered_urls).encode()
+                )
 
             result = self.cache._cache.cas(
                 REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME

@@ -38,6 +38,25 @@ class TestViews(unittest.TestCase):
         )[0]
         eq_(random_string_1, random_string_2)
 
+    @mock.patch("fancy_cache.middleware.COMPRESS_REMEMBERED_URLS", True)
+    def test_render_home1_with_zlib_compression(self):
+        request = self.factory.get("/anything")
+
+        response = views.home(request)
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
+        random_string_1 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+
+        # do it again
+        response = views.home(request)
+        eq_(response.status_code, 200)
+        random_string_2 = re.findall(
+            "Random:(\w+)", response.content.decode("utf8")
+        )[0]
+        eq_(random_string_1, random_string_2)
+
     def test_render_home2(self):
         authenticated = RequestFactory(AUTH_USER="peter")
         request = self.factory.get("/2")
