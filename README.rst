@@ -222,8 +222,8 @@ Changelog
       is True.
     * Bugfix: use correct location for ``REMEMBERED_URLS`` 
       when using Memcached.
-    * Add support for Python 3.11
-    * Drop support for Python < 3.8, Django < 3.2
+    * Add support for Python 3.11, Django 4.1 & 4.2
+    * Drop support for Python < 3.8, Django < 3.2, Django 4.0
 
 1.2.1
     * Bugfix: conflict between the DummyCache backend when 
