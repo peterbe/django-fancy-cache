@@ -88,6 +88,15 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
     so that it'll get called last during the response phase.
     """
 
+    # TODO: These lines can be removed when Django 3.2 support is no longer needed.
+    # It deletes the @property that Django 4.1 implements for `self.cache` so
+    # that we can set it in the FancyCacheMiddleware.__init__ method
+    # via `self.cache` to support Django 3.2.
+    try:
+        delattr(UpdateCacheMiddleware, "cache")
+    except AttributeError:
+        pass
+
     def __init__(self, get_response=None):
         super().__init__(get_response)
 
@@ -265,6 +274,15 @@ class FancyFetchFromCacheMiddleware(FetchFromCacheMiddleware):
     so that it'll get called last during the request phase.
     """
 
+    # TODO: These lines can be removed when Django 3.2 support is no longer needed.
+    # It deletes the @property that Django 4.1 implements for `self.cache` so
+    # that we can set it in the FancyCacheMiddleware.__init__ method
+    # via `self.cache` to support Django 3.2.
+    try:
+        delattr(FetchFromCacheMiddleware, "cache")
+    except AttributeError:
+        pass
+
     def __init__(self, get_response=None):
         super().__init__(get_response)
 
@@ -377,9 +395,6 @@ class FancyCacheMiddleware(
 
     """
 
-    # TODO: This can be removed when Django 3.2 support is no longer needed.
-    cache = None
-
     def __init__(
         self,
         get_response: typing.Callable = None,
@@ -413,6 +428,7 @@ class FancyCacheMiddleware(
             if cache_alias is None:
                 cache_alias = DEFAULT_CACHE_ALIAS
             self.cache_alias = cache_alias
+
             # TODO: This line can be removed when Django 3.2 support is no longer needed.
             self.cache = caches[self.cache_alias]
         except KeyError:
