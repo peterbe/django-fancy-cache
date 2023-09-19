@@ -184,6 +184,17 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 # Remembered URLs have been successfully saved
                 # via Memcached CAS.
                 return
+            # CAS uses `cache._cache.get/set` so we need to set the
+            # REMEMBERED_URLS dict at that location.
+            # This is because CAS cannot call `BaseCache.make_key` to generate
+            # the key when it tries to get a cache entry set by `cache.get/set`.
+            remembered_urls = self.cache._cache.get(REMEMBERED_URLS_KEY, {})
+            remembered_urls = filter_remembered_urls(remembered_urls)
+            remembered_urls[url] = (cache_key, expiration_time)
+            self.cache._cache.set(
+                REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME
+            )
+            return
 
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         if COMPRESS_REMEMBERED_URLS:
@@ -209,12 +220,9 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
         result = False
         tries = 0  # Make sure an unexpected error doesn't cause a loop
         while result is False and tries <= 100:
-            try:
-                remembered_urls, cas_token = self.cache._cache.gets(
-                    REMEMBERED_URLS_KEY
-                )
-            except AttributeError:
-                return False
+            remembered_urls, cas_token = self.cache._cache.gets(
+                REMEMBERED_URLS_KEY
+            )
 
             if remembered_urls is None:
                 # No cache entry; set the cache using `cache.set`.

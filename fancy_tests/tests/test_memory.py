@@ -5,7 +5,8 @@ import unittest
 import zlib
 
 from nose.tools import eq_, ok_
-from django.core.cache import cache
+from django.core.cache import cache, caches
+from unittest import mock
 
 from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
@@ -104,3 +105,37 @@ class TestMemory(unittest.TestCase):
         eq_(len(found), 2)
         ok_(("/page3.html?foo=bar", "key3", None) in found)
         ok_(("/page3.html?foo=else", "key4", None) in found)
+
+
+class TestMemoryWithMemcached(unittest.TestCase):
+    def setUp(self):
+        expiration_time = int(time.time()) + 5
+        self.urls = {
+            "/page1.html": ("key1", expiration_time),
+            "/page2.html": ("key2", expiration_time),
+            "/page3.html?foo=bar": ("key3", expiration_time),
+            "/page3.html?foo=else": ("key4", expiration_time),
+        }
+        self.cache = caches["memcached_backend"]
+        for key, value in self.urls.items():
+            self.cache.set(value[0], key)
+        self.cache._cache.set(REMEMBERED_URLS_KEY, self.urls, 5)
+
+    def tearDown(self):
+        cache.clear()
+
+    @mock.patch("fancy_cache.memory.USE_MEMCACHED_CAS", True)
+    @mock.patch("fancy_cache.memory.cache", caches["memcached_backend"])
+    def test_purge_one_url_with_memcached_check_and_set(self):
+        ok_(self.cache.get("key1"))
+        ok_("/page1.html" in self.cache._cache.get(REMEMBERED_URLS_KEY))
+        found = list(find_urls(["/page1.html"], purge=True))
+        eq_(len(found), 1)
+        ok_(("/page1.html", "key1", None) in found)
+
+        ok_(not cache.get("key1"))
+        ok_("/page1.html" not in self.cache._cache.get(REMEMBERED_URLS_KEY))
+        # find all the rest in there
+        found = list(find_urls([]))
+        eq_(len(found), 3)
+        ok_(("/page1.html", "key1", None) not in found)
