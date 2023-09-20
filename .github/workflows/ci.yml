@@ -14,7 +14,7 @@ jobs:
         # PyPy disabled per issue #69:
         # https://github.com/peterbe/django-fancy-cache/issues/69
         # python-version: [3.7, 3.8, 3.9, "3.10", "pypy-3.8"]
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
 
     steps:
       - name: apt update

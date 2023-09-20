@@ -216,6 +216,15 @@ Or to run it without ``tox`` you can simply run::
 Changelog
 ---------
 
+1.3.0
+    * Enable ``FANCY_COMPRESS_REMEMBERED_URLS`` setting to compress
+      ``remembered_urls`` dictionary when ``FANCY_REMEMBER_ALL_URLS``
+      is True.
+    * Bugfix: use correct location for ``REMEMBERED_URLS`` 
+      when using Memcached.
+    * Add support for Python 3.11, Django 4.1 & 4.2
+    * Drop support for Python < 3.8, Django < 3.2, Django 4.0
+
 1.2.1
     * Bugfix: conflict between the DummyCache backend when 
       ``FANCY_USE_MEMCACHED_CHECK_AND_SET`` is ``True``

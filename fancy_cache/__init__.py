@@ -1,3 +1,3 @@
 from .cache_page import cache_page  # NOQA
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
