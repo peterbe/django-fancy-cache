@@ -57,6 +57,23 @@ class TestMemory(unittest.TestCase):
         found = list(find_urls([]))
         eq_(len(found), 0)
 
+    @mock.patch("fancy_cache.memory.COMPRESS_REMEMBERED_URLS", True)
+    def test_find_and_purge_all_urls_with_zlib_compression_first_time(self):
+        """
+        When enabling zlib compression, the existing REMEMBERED_URLS
+        will not be compressed yet. This test ensures that the transition to
+        compressed REMEMBERED_URLS is seamless.
+        """
+        remembered_urls = cache.get(REMEMBERED_URLS_KEY)
+        cache.set(REMEMBERED_URLS_KEY, remembered_urls, 5)
+        found = list(find_urls([], purge=True))
+        eq_(len(found), 4)
+        for key, value in self.urls.items():
+            pair = (key, value[0], None)
+            ok_(pair in found)
+        found = list(find_urls([]))
+        eq_(len(found), 0)
+
     def test_find_one_url(self):
         found = list(find_urls(["/page1.html"]))
         eq_(len(found), 1)

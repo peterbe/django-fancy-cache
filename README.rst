@@ -216,6 +216,10 @@ Or to run it without ``tox`` you can simply run::
 Changelog
 ---------
 
+1.3.1
+    * Fix a bug whereby ``FANCY_COMPRESS_REMEMBERED_URLS`` setting
+      raises a TypeError upon first implementation.
+
 1.3.0
     * Enable ``FANCY_COMPRESS_REMEMBERED_URLS`` setting to compress
       ``remembered_urls`` dictionary when ``FANCY_REMEMBER_ALL_URLS``

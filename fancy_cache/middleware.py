@@ -207,9 +207,10 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
 
         remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
         if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = json.loads(
-                zlib.decompress(remembered_urls).decode()
-            )
+            if not isinstance(remembered_urls, dict):
+                remembered_urls = json.loads(
+                    zlib.decompress(remembered_urls).decode()
+                )
         remembered_urls = filter_remembered_urls(remembered_urls)
         remembered_urls[url] = (cache_key, expiration_time)
         if COMPRESS_REMEMBERED_URLS:
@@ -238,9 +239,10 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
                 return False
 
             if COMPRESS_REMEMBERED_URLS:
-                remembered_urls = json.loads(
-                    zlib.decompress(remembered_urls).decode()
-                )
+                if not isinstance(remembered_urls, dict):
+                    remembered_urls = json.loads(
+                        zlib.decompress(remembered_urls).decode()
+                    )
 
             remembered_urls = filter_remembered_urls(remembered_urls)
 

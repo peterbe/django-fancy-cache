@@ -53,7 +53,10 @@ def find_urls(
     else:
         remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
     if COMPRESS_REMEMBERED_URLS:
-        remembered_urls = json.loads(zlib.decompress(remembered_urls).decode())
+        if not isinstance(remembered_urls, dict):
+            remembered_urls = json.loads(
+                zlib.decompress(remembered_urls).decode()
+            )
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
@@ -110,9 +113,10 @@ def find_urls(
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
         if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = json.loads(
-                zlib.decompress(remembered_urls).decode()
-            )
+            if not isinstance(remembered_urls, dict):
+                remembered_urls = json.loads(
+                    zlib.decompress(remembered_urls).decode()
+                )
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
         if COMPRESS_REMEMBERED_URLS:
             remembered_urls = zlib.compress(
@@ -130,9 +134,10 @@ def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
             return False
 
         if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = json.loads(
-                zlib.decompress(remembered_urls).decode()
-            )
+            if not isinstance(remembered_urls, dict):
+                remembered_urls = json.loads(
+                    zlib.decompress(remembered_urls).decode()
+                )
 
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
         if COMPRESS_REMEMBERED_URLS:
