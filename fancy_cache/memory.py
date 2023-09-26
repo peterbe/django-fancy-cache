@@ -54,7 +54,9 @@ def find_urls(
         remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
     if COMPRESS_REMEMBERED_URLS:
         if not isinstance(remembered_urls, dict):
-            remembered_urls = json.loads(zlib.decompress(remembered_urls).decode())
+            remembered_urls = json.loads(
+                zlib.decompress(remembered_urls).decode()
+            )
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
