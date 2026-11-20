@@ -223,9 +223,9 @@ The simplest way is to simply run::
 
 Or to run it without ``tox`` you can simply run::
 
-    $ python runtests.py
-
-Some tests need a Memcached server listening on ``127.0.0.1:11211``.
+    $ export PYTHONPATH=`pwd`
+    $ export DJANGO_SETTINGS_MODULE=fancy_tests.tests.settings
+    $ django-admin.py test
 
 
 Changelog

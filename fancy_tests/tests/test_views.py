@@ -2,6 +2,7 @@ import time
 import unittest
 import re
 
+from fancy_tests.tests.assertions import eq_, ok_
 from django.test.client import RequestFactory
 from django.core.cache import cache, caches
 from unittest import mock
@@ -23,282 +24,254 @@ class TestViews(unittest.TestCase):
         request = self.factory.get("/anything")
 
         response = views.home(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         # do it again
         response = views.home(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertEqual(random_string_1, random_string_2)
+        eq_(random_string_1, random_string_2)
 
     @mock.patch("fancy_cache.middleware.COMPRESS_REMEMBERED_URLS", True)
     def test_render_home1_with_zlib_compression(self):
         request = self.factory.get("/anything")
 
         response = views.home(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         # do it again
         response = views.home(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertEqual(random_string_1, random_string_2)
+        eq_(random_string_1, random_string_2)
 
     def test_render_home2(self):
         authenticated = RequestFactory(AUTH_USER="peter")
         request = self.factory.get("/2")
 
         response = views.home2(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         # do it again
         response = views.home2(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertEqual(random_string_1, random_string_2)
+        eq_(random_string_1, random_string_2)
 
         # do it again, but with a hint to disable cache
         request = authenticated.get("/2")
         response = views.home2(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue(random_string_1 != random_string_2)
+        ok_(random_string_1 != random_string_2)
 
     def test_render_home3(self):
         request = self.factory.get("/anything")
 
         response = views.home3(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue("In your HTML" in response.content.decode("utf8"))
+        ok_("In your HTML" in response.content.decode("utf8"))
         extra_random_1 = re.findall(
-            r"In your HTML:(\w+)", response.content.decode("utf8")
+            "In your HTML:(\w+)", response.content.decode("utf8")
         )[0]
 
         response = views.home3(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
         extra_random_2 = re.findall(
-            r"In your HTML:(\w+)", response.content.decode("utf8")
+            "In your HTML:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue("In your HTML" in response.content.decode("utf8"))
-        self.assertEqual(random_string_1, random_string_2)
+        ok_("In your HTML" in response.content.decode("utf8"))
+        eq_(random_string_1, random_string_2)
         # the post_process_response is only called once
-        self.assertEqual(extra_random_1, extra_random_2)
+        eq_(extra_random_1, extra_random_2)
 
     def test_render_home3_no_cache(self):
         factory = RequestFactory(AUTH_USER="peter")
         request = factory.get("/3")
 
         response = views.home3(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
-        self.assertTrue("In your HTML" not in response.content.decode("utf8"))
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
+        ok_("In your HTML" not in response.content.decode("utf8"))
 
     def test_render_home4(self):
         request = self.factory.get("/4")
 
         response = views.home4(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue("In your HTML" in response.content.decode("utf8"))
+        ok_("In your HTML" in response.content.decode("utf8"))
         extra_random_1 = re.findall(
-            r"In your HTML:(\w+)", response.content.decode("utf8")
+            "In your HTML:(\w+)", response.content.decode("utf8")
         )[0]
 
         response = views.home4(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
         extra_random_2 = re.findall(
-            r"In your HTML:(\w+)", response.content.decode("utf8")
+            "In your HTML:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue("In your HTML" in response.content.decode("utf8"))
-        self.assertEqual(random_string_1, random_string_2)
+        ok_("In your HTML" in response.content.decode("utf8"))
+        eq_(random_string_1, random_string_2)
         # the post_process_response is now called every time
-        self.assertTrue(extra_random_1 != extra_random_2)
+        ok_(extra_random_1 != extra_random_2)
 
     def test_render_home5(self):
         request = self.factory.get("/4", {"foo": "bar"})
         response = views.home5(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         request = self.factory.get("/4", {"foo": "baz"})
         response = views.home5(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue(random_string_1 != random_string_2)
+        ok_(random_string_1 != random_string_2)
 
         request = self.factory.get("/4", {"foo": "baz", "other": "junk"})
         response = views.home5(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_3 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertEqual(random_string_2, random_string_3)
+        eq_(random_string_2, random_string_3)
 
     def test_render_home5bis(self):
         request = self.factory.get("/4", {"foo": "bar"})
         response = views.home5bis(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         request = self.factory.get("/4", {"foo": "baz"})
         response = views.home5bis(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue(random_string_1 != random_string_2)
+        ok_(random_string_1 != random_string_2)
 
         request = self.factory.get("/4", {"foo": "baz", "bar": "foo"})
         response = views.home5bis(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_3 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertEqual(random_string_2, random_string_3)
+        eq_(random_string_2, random_string_3)
 
     def test_remember_stats_all_urls(self):
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
-        self.assertEqual(remembered_urls, None)
+        eq_(remembered_urls, None)
         request = self.factory.get("/anything")
         response = views.home6(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
         # now ask the memory thing
         (match,) = find_urls(urls=["/anything"])
-        self.assertEqual(match[0], "/anything")
-        self.assertEqual(match[2]["hits"], 0)
-        self.assertEqual(match[2]["misses"], 1)
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 0)
+        eq_(match[2]["misses"], 1)
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
-        self.assertEqual(len(remembered_urls.keys()), 1)
-        self.assertEqual(list(remembered_urls.keys())[0], "/anything")
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
         cache_key = remembered_urls["/anything"][0]
         timeout = remembered_urls["/anything"][1]
-        self.assertTrue(timeout > int(time.time()))
+        ok_(timeout > int(time.time()))
 
         # second time
         response = views.home6(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         (match,) = find_urls(urls=["/anything"])
-        self.assertEqual(match[0], "/anything")
-        self.assertEqual(match[2]["hits"], 1)
-        self.assertEqual(match[2]["misses"], 1)
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 1)
+        eq_(match[2]["misses"], 1)
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
-        self.assertEqual(len(remembered_urls.keys()), 1)
-        self.assertEqual(list(remembered_urls.keys())[0], "/anything")
-        self.assertEqual(remembered_urls["/anything"][0], cache_key)
-        self.assertEqual(remembered_urls["/anything"][1], timeout)
-        self.assertTrue(timeout > int(time.time()))
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        eq_(remembered_urls["/anything"][0], cache_key)
+        eq_(remembered_urls["/anything"][1], timeout)
+        ok_(timeout > int(time.time()))
 
     def test_remember_stats_all_urls_with_never_cache_decorator(self):
         request = self.factory.get("/anything")
         response = views.home9(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
         # now ask the memory thing
         (match,) = find_urls(urls=["/anything"])
-        self.assertEqual(match[0], "/anything")
-        self.assertEqual(match[2]["hits"], 0)
-        self.assertEqual(match[2]["misses"], 1)
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 0)
+        eq_(match[2]["misses"], 1)
 
         # TODO: assert that the timeout was passed as expected.
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
-        self.assertEqual(len(remembered_urls.keys()), 1)
-        self.assertEqual(list(remembered_urls.keys())[0], "/anything")
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
         cache_key = remembered_urls["/anything"][0]
         timeout = remembered_urls["/anything"][1]
-        self.assertTrue(timeout > int(time.time()))
+        ok_(timeout > int(time.time()))
 
         # second time
         response = views.home9(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         (match,) = find_urls(urls=["/anything"])
-        self.assertEqual(match[0], "/anything")
-        self.assertEqual(match[2]["hits"], 1)
-        self.assertEqual(match[2]["misses"], 1)
+        eq_(match[0], "/anything")
+        eq_(match[2]["hits"], 1)
+        eq_(match[2]["misses"], 1)
 
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
-        self.assertEqual(len(remembered_urls.keys()), 1)
-        self.assertEqual(list(remembered_urls.keys())[0], "/anything")
-        self.assertEqual(remembered_urls["/anything"][0], cache_key)
-        self.assertEqual(remembered_urls["/anything"][1], timeout)
-        self.assertTrue(timeout > int(time.time()))
+        eq_(len(remembered_urls.keys()), 1)
+        eq_(list(remembered_urls.keys())[0], "/anything")
+        eq_(remembered_urls["/anything"][0], cache_key)
+        eq_(remembered_urls["/anything"][1], timeout)
+        ok_(timeout > int(time.time()))
 
     def test_remember_stats_all_urls_looong_url(self):
         request = self.factory.get(
@@ -313,42 +286,40 @@ class TestViews(unittest.TestCase):
             },
         )
         response = views.home6(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
 
         # now ask the memory thing
         (match,) = find_urls()
-        self.assertTrue(match[0].startswith("/something/really"))
-        self.assertEqual(match[2]["hits"], 0)
-        self.assertEqual(match[2]["misses"], 1)
+        ok_(match[0].startswith("/something/really"))
+        eq_(match[2]["hits"], 0)
+        eq_(match[2]["misses"], 1)
 
         # second time
         response = views.home6(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         (match,) = find_urls([])
-        self.assertTrue(match[0].startswith("/something/really"))
-        self.assertEqual(match[2]["hits"], 1)
-        self.assertEqual(match[2]["misses"], 1)
+        ok_(match[0].startswith("/something/really"))
+        eq_(match[2]["hits"], 1)
+        eq_(match[2]["misses"], 1)
 
     def test_cache_backends(self):
         request = self.factory.get("/anything")
 
         response = views.home7(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         # clear second cache backend
         caches["second_backend"].clear()
         response = views.home7(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue(random_string_1 != random_string_2)
+        ok_(random_string_1 != random_string_2)
 
     def test_cache_dummy_backend(self):
         """
@@ -357,20 +328,18 @@ class TestViews(unittest.TestCase):
         request = self.factory.get("/anything")
 
         response = views.home8(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            re.findall(r"Random:\w+", response.content.decode("utf8"))
-        )
+        eq_(response.status_code, 200)
+        ok_(re.findall("Random:\w+", response.content.decode("utf8")))
         random_string_1 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
 
         response = views.home8(request)
-        self.assertEqual(response.status_code, 200)
+        eq_(response.status_code, 200)
         random_string_2 = re.findall(
-            r"Random:(\w+)", response.content.decode("utf8")
+            "Random:(\w+)", response.content.decode("utf8")
         )[0]
-        self.assertTrue(random_string_1 != random_string_2)
+        ok_(random_string_1 != random_string_2)
 
         # Make sure clearing the dummy cache doesn't raise an error,
         # even though it should do nothing.
