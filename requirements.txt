@@ -1,5 +1,4 @@
 # Tests
-django-nose
 fabric
 pylibmc
 sphinx
