@@ -2,7 +2,7 @@ import time
 import unittest
 import re
 
-from fancy_tests.tests.assertions import eq_, ok_
+from nose.tools import eq_, ok_
 from django.test.client import RequestFactory
 from django.core.cache import cache, caches
 from unittest import mock

@@ -1,9 +1,10 @@
 import json
+import mock
 import time
 import unittest
 import zlib
 
-from fancy_tests.tests.assertions import eq_, ok_
+from nose.tools import eq_, ok_
 from django.core.cache import cache, caches
 from unittest import mock
 

@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 # Tests. Django itself comes from the tox factor (see tox.ini).
 # pylibmc 1.8 requires Python 3.11+.
 pylibmc==1.6.3; python_version < "3.11"
 pylibmc==1.8.0; python_version >= "3.11"
 pymemcache==4.0.0
+=======
+# Tests
+django-nose
+fabric
+pylibmc
+sphinx
+>>>>>>> feature/modernize-ci

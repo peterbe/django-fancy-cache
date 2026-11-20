@@ -7,8 +7,8 @@ jobs:
   black:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           # black 22.3.0 crashes on Python 3.14 (asyncio change), so run it on 3.13.
           python-version: '3.13'
