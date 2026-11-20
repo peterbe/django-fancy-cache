@@ -3,11 +3,9 @@ Middleware based on Django's cache middleware.
 See https://github.com/django/django/blob/main/django/middleware/cache.py
 """
 import functools
-import json
 import logging
 import time
 import typing
-import zlib
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS, caches
@@ -26,7 +24,12 @@ from django.utils.cache import (
 from urllib.parse import parse_qs, urlencode
 
 from fancy_cache.constants import REMEMBERED_URLS_KEY, LONG_TIME
-from fancy_cache.utils import md5, filter_remembered_urls
+from fancy_cache.utils import (
+    dump_remembered_urls,
+    filter_remembered_urls,
+    load_remembered_urls,
+    md5,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -197,27 +200,28 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
             # REMEMBERED_URLS dict at that location.
             # This is because CAS cannot call `BaseCache.make_key` to generate
             # the key when it tries to get a cache entry set by `cache.get/set`.
-            remembered_urls = self.cache._cache.get(REMEMBERED_URLS_KEY, {})
+            remembered_urls = load_remembered_urls(
+                self.cache._cache.get(REMEMBERED_URLS_KEY)
+            )
             remembered_urls = filter_remembered_urls(remembered_urls)
             remembered_urls[url] = (cache_key, expiration_time)
             self.cache._cache.set(
-                REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME
+                REMEMBERED_URLS_KEY,
+                dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+                LONG_TIME,
             )
             return
 
-        remembered_urls = self.cache.get(REMEMBERED_URLS_KEY, {})
-        if COMPRESS_REMEMBERED_URLS:
-            if not isinstance(remembered_urls, dict):
-                remembered_urls = json.loads(
-                    zlib.decompress(remembered_urls).decode()
-                )
+        remembered_urls = load_remembered_urls(
+            self.cache.get(REMEMBERED_URLS_KEY)
+        )
         remembered_urls = filter_remembered_urls(remembered_urls)
         remembered_urls[url] = (cache_key, expiration_time)
-        if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = zlib.compress(
-                json.dumps(remembered_urls).encode()
-            )
-        self.cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+        self.cache.set(
+            REMEMBERED_URLS_KEY,
+            dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+            LONG_TIME,
+        )
 
     def _remember_url_cas(
         self, url: str, cache_key: str, expiration_time: int
@@ -230,31 +234,23 @@ class FancyUpdateCacheMiddleware(UpdateCacheMiddleware):
         result = False
         tries = 0  # Make sure an unexpected error doesn't cause a loop
         while result is False and tries <= 100:
-            remembered_urls, cas_token = self.cache._cache.gets(
+            stored_value, cas_token = self.cache._cache.gets(
                 REMEMBERED_URLS_KEY
             )
 
-            if remembered_urls is None:
+            if stored_value is None:
                 # No cache entry; set the cache using `cache.set`.
                 return False
 
-            if COMPRESS_REMEMBERED_URLS:
-                if not isinstance(remembered_urls, dict):
-                    remembered_urls = json.loads(
-                        zlib.decompress(remembered_urls).decode()
-                    )
-
+            remembered_urls = load_remembered_urls(stored_value)
             remembered_urls = filter_remembered_urls(remembered_urls)
-
             remembered_urls[url] = (cache_key, expiration_time)
 
-            if COMPRESS_REMEMBERED_URLS:
-                remembered_urls = zlib.compress(
-                    json.dumps(remembered_urls).encode()
-                )
-
             result = self.cache._cache.cas(
-                REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
+                REMEMBERED_URLS_KEY,
+                dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+                cas_token,
+                LONG_TIME,
             )
 
             tries += 1

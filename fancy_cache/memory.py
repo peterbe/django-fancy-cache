@@ -1,15 +1,18 @@
-import json
 import logging
 import re
 import typing
-import zlib
 
 from django.conf import settings
 from django.core.cache import cache
 
 from fancy_cache.constants import LONG_TIME, REMEMBERED_URLS_KEY
 from fancy_cache.middleware import USE_MEMCACHED_CAS
-from fancy_cache.utils import md5, filter_remembered_urls
+from fancy_cache.utils import (
+    dump_remembered_urls,
+    filter_remembered_urls,
+    load_remembered_urls,
+    md5,
+)
 
 __all__ = ("find_urls",)
 
@@ -49,14 +52,10 @@ def find_urls(
     typing.Tuple[str, str, typing.Optional[typing.Dict[str, int]]], None, None
 ]:
     if USE_MEMCACHED_CAS is True:
-        remembered_urls = cache._cache.get(REMEMBERED_URLS_KEY, {})
+        stored_value = cache._cache.get(REMEMBERED_URLS_KEY)
     else:
-        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
-    if COMPRESS_REMEMBERED_URLS:
-        if not isinstance(remembered_urls, dict):
-            remembered_urls = json.loads(
-                zlib.decompress(remembered_urls).decode()
-            )
+        stored_value = cache.get(REMEMBERED_URLS_KEY)
+    remembered_urls = load_remembered_urls(stored_value)
     keys_to_delete = []
     if urls:
         regexes = _urls_to_regexes(urls)
@@ -106,46 +105,41 @@ def find_urls(
             # REMEMBERED_URLS dict at that location.
             # This is because CAS cannot call `BaseCache.make_key` to generate
             # the key when it tries to get a cache entry set by `cache.get/set`.
-            remembered_urls = cache._cache.get(REMEMBERED_URLS_KEY, {})
+            remembered_urls = load_remembered_urls(
+                cache._cache.get(REMEMBERED_URLS_KEY)
+            )
             remembered_urls = delete_keys(keys_to_delete, remembered_urls)
-            cache._cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+            cache._cache.set(
+                REMEMBERED_URLS_KEY,
+                dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+                LONG_TIME,
+            )
             return
 
-        remembered_urls = cache.get(REMEMBERED_URLS_KEY, {})
-        if COMPRESS_REMEMBERED_URLS:
-            if not isinstance(remembered_urls, dict):
-                remembered_urls = json.loads(
-                    zlib.decompress(remembered_urls).decode()
-                )
+        remembered_urls = load_remembered_urls(cache.get(REMEMBERED_URLS_KEY))
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
-        if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = zlib.compress(
-                json.dumps(remembered_urls).encode()
-            )
-        cache.set(REMEMBERED_URLS_KEY, remembered_urls, LONG_TIME)
+        cache.set(
+            REMEMBERED_URLS_KEY,
+            dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+            LONG_TIME,
+        )
 
 
 def delete_keys_cas(keys_to_delete: typing.List[str]) -> bool:
     result = False
     tries = 0
     while result is False and tries < 100:
-        remembered_urls, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
-        if remembered_urls is None:
+        stored_value, cas_token = cache._cache.gets(REMEMBERED_URLS_KEY)
+        if stored_value is None:
             return False
 
-        if COMPRESS_REMEMBERED_URLS:
-            if not isinstance(remembered_urls, dict):
-                remembered_urls = json.loads(
-                    zlib.decompress(remembered_urls).decode()
-                )
-
+        remembered_urls = load_remembered_urls(stored_value)
         remembered_urls = delete_keys(keys_to_delete, remembered_urls)
-        if COMPRESS_REMEMBERED_URLS:
-            remembered_urls = zlib.compress(
-                json.dumps(remembered_urls).encode()
-            )
         result = cache._cache.cas(
-            REMEMBERED_URLS_KEY, remembered_urls, cas_token, LONG_TIME
+            REMEMBERED_URLS_KEY,
+            dump_remembered_urls(remembered_urls, COMPRESS_REMEMBERED_URLS),
+            cas_token,
+            LONG_TIME,
         )
         tries += 1
     if result is False:
