@@ -1,7 +1,7 @@
 import time
 
 from django.test import TestCase
-from fancy_tests.tests.assertions import ok_
+from nose.tools import ok_
 from django.core.cache import cache
 from django.core.management import call_command
 from io import StringIO
