@@ -161,10 +161,11 @@ def delete_keys(
     Helper function to delete `keys_to_delete` from the `remembered_urls` dict.
     """
     for url in keys_to_delete:
-        remembered_urls.pop(url)
-        misses_cache_key = "%s__misses" % url
-        hits_cache_key = "%s__hits" % url
-        cache.delete(misses_cache_key)
-        cache.delete(hits_cache_key)
+        # Another process purging the same URL may have removed it already.
+        remembered_urls.pop(url, None)
+        # Hashed the same way as when the counts are written, which also keeps
+        # long URLs under Memcached's 250 character key limit.
+        cache.delete(md5("%s__misses" % url))
+        cache.delete(md5("%s__hits" % url))
     remembered_urls = filter_remembered_urls(remembered_urls)
     return remembered_urls
