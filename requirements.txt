@@ -1,6 +1,4 @@
 # Tests
-Django>=3.2.0,<4.1
-django-nose
 fabric
 pylibmc
 sphinx
