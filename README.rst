@@ -140,6 +140,21 @@ flag and enabling ``cas`` in your ``CACHES`` settings:
         }
      }
 
+All remembered URLs are stored in a single cache entry, which can outgrow
+your cache backend's item size limit (1MB by default for Memcached). To
+store that entry zlib-compressed, set:
+
+.. code:: python
+
+    # in settings.py
+
+    FANCY_COMPRESS_REMEMBERED_URLS = True
+
+Expect it to be roughly 3 times smaller. Every response that gets cached
+reads and rewrites the whole entry, so compression adds CPU time to each
+cache miss in proportion to the number of remembered URLs (tens of
+milliseconds at around 10,000 URLs).
+
 The second way to inspect all recorded URLs is to use the
 ``fancy-cache`` management command. This is only available if you have
 added ``fancy_cache`` to your ``INSTALLED_APPS`` setting. Now you can do
