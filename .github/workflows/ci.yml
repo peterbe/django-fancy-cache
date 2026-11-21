@@ -14,6 +14,8 @@ jobs:
         # PyPy disabled per issue #69:
         # https://github.com/peterbe/django-fancy-cache/issues/69
         # python-version: [3.7, 3.8, 3.9, "3.10", "pypy-3.8"]
+        # GitHub's runners no longer provide Python 3.7-3.9. Python 3.12+
+        # can't run the tests until nose is replaced; a separate PR adds them.
         python-version: ["3.10", "3.11"]
 
     steps:
