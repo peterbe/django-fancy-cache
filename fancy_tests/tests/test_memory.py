@@ -4,7 +4,6 @@ import time
 import unittest
 import zlib
 
-from nose.tools import eq_, ok_
 from django.core.cache import cache, caches
 from unittest import mock
 
@@ -30,19 +29,19 @@ class TestMemory(unittest.TestCase):
 
     def test_find_all_urls(self):
         found = list(find_urls([]))
-        eq_(len(found), 4)
+        self.assertEqual(len(found), 4)
         for key, value in self.urls.items():
             pair = (key, value[0], None)
-            ok_(pair in found)
+            self.assertTrue(pair in found)
 
     def test_find_and_purge_all_urls(self):
         found = list(find_urls([], purge=True))
-        eq_(len(found), 4)
+        self.assertEqual(len(found), 4)
         for key, value in self.urls.items():
             pair = (key, value[0], None)
-            ok_(pair in found)
+            self.assertTrue(pair in found)
         found = list(find_urls([]))
-        eq_(len(found), 0)
+        self.assertEqual(len(found), 0)
 
     @mock.patch("fancy_cache.memory.COMPRESS_REMEMBERED_URLS", True)
     def test_find_and_purge_all_urls_with_zlib_compression(self):
@@ -50,12 +49,12 @@ class TestMemory(unittest.TestCase):
         remembered_urls = zlib.compress(json.dumps(remembered_urls).encode())
         cache.set(REMEMBERED_URLS_KEY, remembered_urls, 5)
         found = list(find_urls([], purge=True))
-        eq_(len(found), 4)
+        self.assertEqual(len(found), 4)
         for key, value in self.urls.items():
             pair = (key, value[0], None)
-            ok_(pair in found)
+            self.assertTrue(pair in found)
         found = list(find_urls([]))
-        eq_(len(found), 0)
+        self.assertEqual(len(found), 0)
 
     @mock.patch("fancy_cache.memory.COMPRESS_REMEMBERED_URLS", True)
     def test_find_and_purge_all_urls_with_zlib_compression_first_time(self):
@@ -67,31 +66,31 @@ class TestMemory(unittest.TestCase):
         remembered_urls = cache.get(REMEMBERED_URLS_KEY)
         cache.set(REMEMBERED_URLS_KEY, remembered_urls, 5)
         found = list(find_urls([], purge=True))
-        eq_(len(found), 4)
+        self.assertEqual(len(found), 4)
         for key, value in self.urls.items():
             pair = (key, value[0], None)
-            ok_(pair in found)
+            self.assertTrue(pair in found)
         found = list(find_urls([]))
-        eq_(len(found), 0)
+        self.assertEqual(len(found), 0)
 
     def test_find_one_url(self):
         found = list(find_urls(["/page1.html"]))
-        eq_(len(found), 1)
-        ok_(("/page1.html", "key1", None) in found)
+        self.assertEqual(len(found), 1)
+        self.assertTrue(("/page1.html", "key1", None) in found)
 
     def test_purge_one_url(self):
-        ok_(cache.get("key1"))
-        ok_("/page1.html" in cache.get(REMEMBERED_URLS_KEY))
+        self.assertTrue(cache.get("key1"))
+        self.assertTrue("/page1.html" in cache.get(REMEMBERED_URLS_KEY))
         found = list(find_urls(["/page1.html"], purge=True))
-        eq_(len(found), 1)
-        ok_(("/page1.html", "key1", None) in found)
+        self.assertEqual(len(found), 1)
+        self.assertTrue(("/page1.html", "key1", None) in found)
 
-        ok_(not cache.get("key1"))
-        ok_("/page1.html" not in cache.get(REMEMBERED_URLS_KEY))
+        self.assertTrue(not cache.get("key1"))
+        self.assertTrue("/page1.html" not in cache.get(REMEMBERED_URLS_KEY))
         # find all the rest in there
         found = list(find_urls([]))
-        eq_(len(found), 3)
-        ok_(("/page1.html", "key1", None) not in found)
+        self.assertEqual(len(found), 3)
+        self.assertTrue(("/page1.html", "key1", None) not in found)
 
     def test_purge_one_expired_url(self):
         """
@@ -100,28 +99,28 @@ class TestMemory(unittest.TestCase):
         with `purge=True`.
         """
         cache.delete("key1")
-        ok_(not cache.get("key1"))
-        ok_("/page1.html" in cache.get(REMEMBERED_URLS_KEY))
+        self.assertTrue(not cache.get("key1"))
+        self.assertTrue("/page1.html" in cache.get(REMEMBERED_URLS_KEY))
         found = list(find_urls(["/page1.html"], purge=True))
-        eq_(len(found), 0)
-        ok_(not cache.get("key1"))
-        ok_("/page1.html" not in cache.get(REMEMBERED_URLS_KEY))
+        self.assertEqual(len(found), 0)
+        self.assertTrue(not cache.get("key1"))
+        self.assertTrue("/page1.html" not in cache.get(REMEMBERED_URLS_KEY))
 
         # find all the rest in there
         found = list(find_urls([]))
-        eq_(len(found), 3)
-        ok_(("/page1.html", "key1", None) not in found)
+        self.assertEqual(len(found), 3)
+        self.assertTrue(("/page1.html", "key1", None) not in found)
 
     def test_some_urls(self):
         found = list(find_urls(["/page2.html*"]))
-        eq_(len(found), 1)
-        ok_(("/page2.html", "key2", None) in found)
+        self.assertEqual(len(found), 1)
+        self.assertTrue(("/page2.html", "key2", None) in found)
 
     def test_some_urls_double_star(self):
         found = list(find_urls(["/page*.html?*"]))
-        eq_(len(found), 2)
-        ok_(("/page3.html?foo=bar", "key3", None) in found)
-        ok_(("/page3.html?foo=else", "key4", None) in found)
+        self.assertEqual(len(found), 2)
+        self.assertTrue(("/page3.html?foo=bar", "key3", None) in found)
+        self.assertTrue(("/page3.html?foo=else", "key4", None) in found)
 
 
 class TestMemoryWithMemcached(unittest.TestCase):
@@ -144,15 +143,19 @@ class TestMemoryWithMemcached(unittest.TestCase):
     @mock.patch("fancy_cache.memory.USE_MEMCACHED_CAS", True)
     @mock.patch("fancy_cache.memory.cache", caches["memcached_backend"])
     def test_purge_one_url_with_memcached_check_and_set(self):
-        ok_(self.cache.get("key1"))
-        ok_("/page1.html" in self.cache._cache.get(REMEMBERED_URLS_KEY))
+        self.assertTrue(self.cache.get("key1"))
+        self.assertTrue(
+            "/page1.html" in self.cache._cache.get(REMEMBERED_URLS_KEY)
+        )
         found = list(find_urls(["/page1.html"], purge=True))
-        eq_(len(found), 1)
-        ok_(("/page1.html", "key1", None) in found)
+        self.assertEqual(len(found), 1)
+        self.assertTrue(("/page1.html", "key1", None) in found)
 
-        ok_(not cache.get("key1"))
-        ok_("/page1.html" not in self.cache._cache.get(REMEMBERED_URLS_KEY))
+        self.assertTrue(not cache.get("key1"))
+        self.assertTrue(
+            "/page1.html" not in self.cache._cache.get(REMEMBERED_URLS_KEY)
+        )
         # find all the rest in there
         found = list(find_urls([]))
-        eq_(len(found), 3)
-        ok_(("/page1.html", "key1", None) not in found)
+        self.assertEqual(len(found), 3)
+        self.assertTrue(("/page1.html", "key1", None) not in found)

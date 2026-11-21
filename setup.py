@@ -57,7 +57,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    tests_require=["nose"],
     test_suite="runtests.runtests",
     url="https://github.com/peterbe/django-fancy-cache",
 )
