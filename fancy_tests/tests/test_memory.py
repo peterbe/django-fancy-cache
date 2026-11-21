@@ -10,6 +10,7 @@ from unittest import mock
 
 from fancy_cache.constants import REMEMBERED_URLS_KEY
 from fancy_cache.memory import find_urls
+from fancy_cache.utils import md5
 
 
 class TestMemory(unittest.TestCase):
@@ -112,6 +113,29 @@ class TestMemory(unittest.TestCase):
         eq_(len(found), 3)
         ok_(("/page1.html", "key1", None) not in found)
 
+    def test_purge_url_that_another_process_already_purged(self):
+        """
+        Two processes can purge the same URL at once. Whichever writes the
+        remembered URLs back second must not fail because the URL is gone.
+        """
+        first_purge = find_urls(["/page1.html"], purge=True)
+        next(first_purge)
+        list(find_urls(["/page1.html"], purge=True))
+        list(first_purge)
+        self.assertNotIn("/page1.html", cache.get(REMEMBERED_URLS_KEY))
+
+    def test_purge_deletes_hit_and_miss_counts(self):
+        hits_cache_key = md5("/page1.html__hits")
+        misses_cache_key = md5("/page1.html__misses")
+        cache.set(hits_cache_key, 3)
+        cache.set(misses_cache_key, 1)
+        found = list(find_urls(["/page1.html"], purge=True))
+        self.assertEqual(
+            found, [("/page1.html", "key1", {"hits": 3, "misses": 1})]
+        )
+        self.assertIsNone(cache.get(hits_cache_key))
+        self.assertIsNone(cache.get(misses_cache_key))
+
     def test_some_urls(self):
         found = list(find_urls(["/page2.html*"]))
         eq_(len(found), 1)
@@ -140,6 +164,38 @@ class TestMemoryWithMemcached(unittest.TestCase):
 
     def tearDown(self):
         cache.clear()
+        self.cache.clear()
+
+    @mock.patch("fancy_cache.memory.USE_MEMCACHED_CAS", True)
+    @mock.patch("fancy_cache.memory.cache", caches["memcached_backend"])
+    def test_purge_url_that_another_process_already_purged(self):
+        first_purge = find_urls(["/page1.html"], purge=True)
+        next(first_purge)
+        list(find_urls(["/page1.html"], purge=True))
+        list(first_purge)
+        self.assertNotIn(
+            "/page1.html", self.cache._cache.get(REMEMBERED_URLS_KEY)
+        )
+
+    @mock.patch("fancy_cache.memory.USE_MEMCACHED_CAS", True)
+    @mock.patch("fancy_cache.memory.cache", caches["memcached_backend"])
+    def test_purge_url_longer_than_memcached_key_limit(self):
+        """
+        Memcached rejects keys over 250 characters, so any cache key built
+        from a URL must be hashed.
+        """
+        long_url = "/page1.html?" + "&".join(
+            "filter%d=value" % number for number in range(20)
+        )
+        self.assertGreater(len(long_url), 250)
+        self.cache.set("key5", long_url)
+        remembered_urls = self.cache._cache.get(REMEMBERED_URLS_KEY)
+        remembered_urls[long_url] = ("key5", int(time.time()) + 5)
+        self.cache._cache.set(REMEMBERED_URLS_KEY, remembered_urls, 5)
+
+        found = list(find_urls([long_url], purge=True))
+        self.assertEqual(found, [(long_url, "key5", None)])
+        self.assertNotIn(long_url, self.cache._cache.get(REMEMBERED_URLS_KEY))
 
     @mock.patch("fancy_cache.memory.USE_MEMCACHED_CAS", True)
     @mock.patch("fancy_cache.memory.cache", caches["memcached_backend"])

@@ -10,7 +10,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          # black 22.3.0 crashes on Python 3.14 and later, so this stays on 3.13
+          # until black is upgraded in a separate PR (the upgrade reformats some files).
+          python-version: '3.13'
       - name: install black
         run: pip install black==22.3.0
       - name: Black
